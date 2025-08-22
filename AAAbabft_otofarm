@@ -1,0 +1,200 @@
+--[[
+	WARNING: Heads up! This script has not been verified by ScriptBlox. Use at your own risk!
+]]
+local VirtualUser = game:GetService('VirtualUser')
+
+game:GetService('Players').LocalPlayer.Idled:Connect(function()
+    VirtualUser:CaptureController()
+    VirtualUser:ClickButton2(Vector2.new())
+end)
+
+game:GetService("StarterGui"):SetCore("SendNotification", {
+    Title = "AntiAFK Activated!",
+    Text = "Made by Baris",
+    Duration = 5
+})
+
+-- Services
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+-- LocalPlayer
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+local humanoid = character:WaitForChild("Humanoid")
+
+-- Teleport Coordinates
+local coordinates = {
+    Vector3.new(-128.67921447753906, 3.805661916732788, 1362.3819580078125),
+    Vector3.new(-80.3002700805664, 23.340381622314453, 2145.011962890625),
+    Vector3.new(-19.706039428710938, 23.33924102783203, 2910.548828125),
+    Vector3.new(-10.347768783569336, 38.38076400756836, 3677.6201171875),
+    Vector3.new(8.959400177001953, 38.386234283447266, 4448.875),
+    Vector3.new(-7.866071701049805, 38.40363693237305, 5220.28271484375),
+    Vector3.new(-51.39574432373047, 38.41819381713867, 5981.783203125),
+    Vector3.new(-69.59131622314453, 38.42177963256836, 6761.357421875),
+    Vector3.new(-88.62064361572266, 38.42158126831055, 7533.0146484375),
+    Vector3.new(-61.180755615234375, 38.407291412353516, 8296.3603515625),
+}
+local chest = Vector3.new(-58.013084411621094, -360.4061584472656, 9482.048828125)
+
+-- Variables
+local isScriptEnabled = false
+local currentIndex = 1
+local isAtChest = false
+
+-- GUI Setup (Draggable Toggle Button)
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "TeleportGui"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = player:WaitForChild("PlayerGui")
+
+local ToggleButton = Instance.new("TextButton")
+ToggleButton.Size = UDim2.new(0, 100, 0, 50)
+ToggleButton.Position = UDim2.new(0.5, -50, 0.8, -25)
+ToggleButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleButton.Text = "Toggle: OFF"
+ToggleButton.Parent = ScreenGui
+
+-- Make Button Draggable
+local dragging = false
+local dragInput, dragStart, startPos
+
+local function update(input)
+    local delta = input.Position - dragStart
+    ToggleButton.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+end
+
+ToggleButton.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = ToggleButton.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+ToggleButton.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        update(input)
+    end
+end)
+
+-- Movement Restriction
+local function restrictMovement()
+    if humanoidRootPart and humanoid then
+        humanoidRootPart.Anchored = true
+        humanoid.WalkSpeed = 0
+        humanoid.JumpPower = 0
+    end
+end
+
+local function allowMovement()
+    if humanoidRootPart and humanoid then
+        humanoidRootPart.Anchored = false
+        humanoid.WalkSpeed = 16
+        humanoid.JumpPower = 50
+    end
+end
+
+-- Teleport Function (Client-Side with Server Sync)
+local function teleportTo(position)
+    if humanoidRootPart and humanoid and humanoid.Health > 0 then
+        -- Client-side teleport
+        humanoidRootPart.CFrame = CFrame.new(position)
+        -- Force server sync by manipulating velocity or position
+        humanoidRootPart.Velocity = Vector3.new(0, 0, 0) -- Reset velocity to avoid glitches
+        humanoidRootPart.Anchored = false -- Briefly unanchor to allow server sync
+        wait(0.1)
+        humanoidRootPart.Anchored = true -- Re-anchor to prevent falling
+        -- Simulate touch for checkpoints
+        local touchParts = workspace:FindPartsInRegion3(
+            Region3.new(position - Vector3.new(5, 5, 5), position + Vector3.new(5, 5, 5)),
+            nil,
+            100
+        )
+        for _, part in pairs(touchParts) do
+            if part:FindFirstChild("TouchInterest") then
+                firetouchinterest(humanoidRootPart, part, 1) -- Simulate touch start
+                wait()
+                firetouchinterest(humanoidRootPart, part, 0) -- Simulate touch end
+            end
+        end
+    end
+end
+
+-- Main Teleport Loop
+local function startTeleportLoop()
+    while isScriptEnabled do
+        if humanoid and humanoid.Health > 0 then
+            if not isAtChest then
+                if currentIndex <= #coordinates then
+                    teleportTo(coordinates[currentIndex])
+                    restrictMovement()
+                    currentIndex = currentIndex + 1
+                    wait(1.6)
+                else
+                    isAtChest = true
+                    teleportTo(chest)
+                    allowMovement()
+                    -- Force chest interaction
+                    local chestParts = workspace:FindPartsInRegion3(
+                            Region3.new(chest - Vector3.new(10, 10, 10), chest + Vector3.new(10, 10, 10)),
+                            nil,
+                            100
+                    )
+                    for _, part in pairs(chestParts) do
+                        if part:FindFirstChild("TouchInterest") then
+                            firetouchinterest(humanoidRootPart, part, 1)
+                            wait()
+                            firetouchinterest(humanoidRootPart, part, 0)
+                        end
+                    end
+                    wait(14) -- Wait 14 seconds at chest
+                    isAtChest = false
+                    currentIndex = 1
+                    restrictMovement()
+                end
+            end
+        end
+        wait()
+    end
+end
+
+-- Toggle Button Logic
+ToggleButton.MouseButton1Click:Connect(function()
+    isScriptEnabled = not isScriptEnabled
+    ToggleButton.Text = isScriptEnabled and "Toggle: ON" or "Toggle: OFF"
+    ToggleButton.BackgroundColor3 = isScriptEnabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(100, 100, 255)
+    
+    if isScriptEnabled then
+        restrictMovement()
+        spawn(startTeleportLoop)
+    else
+        allowMovement()
+    end
+end)
+
+-- Handle Character Respawn
+player.CharacterAdded:Connect(function(newCharacter)
+    character = newCharacter
+    humanoidRootPart = newCharacter:WaitForChild("HumanoidRootPart")
+    humanoid = newCharacter:WaitForChild("Humanoid")
+    if isScriptEnabled and not isAtChest then
+        restrictMovement()
+    end
+end)

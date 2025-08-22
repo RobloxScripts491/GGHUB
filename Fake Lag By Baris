@@ -1,0 +1,338 @@
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+
+-- Oyuncu ve durum değişkenleri
+local player = Players.LocalPlayer
+local guiState = {
+    position = UDim2.new(0.5, -160, 0.5, -85), -- Varsayılan pozisyon
+    fakeLag = false,
+    delayTime = 0.4,
+    waitTime = 0.05,
+    minimized = false
+}
+
+-- GUI oluşturma fonksiyonu
+local function createGUI()
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = "FakeLagGUI"
+    ScreenGui.ResetOnSpawn = false -- Respawn'da GUI'nin kaybolmasını önler
+    ScreenGui.Parent = player:WaitForChild("PlayerGui")
+
+    local main = Instance.new("Frame")
+    main.Name = "MainFrame"
+    main.Size = guiState.minimized and UDim2.new(0, 320, 0, 50) or UDim2.new(0, 320, 0, 170)
+    main.Position = guiState.position
+    main.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    main.Active = true
+    main.Draggable = true
+    main.Parent = ScreenGui
+
+    -- Pozisyon değişikliklerini kaydet
+    main:GetPropertyChangedSignal("Position"):Connect(function()
+        guiState.position = main.Position
+    end)
+
+    local UICorner = Instance.new("UICorner", main)
+    UICorner.CornerRadius = UDim.new(0, 12)
+
+    local UIStroke = Instance.new("UIStroke", main)
+    UIStroke.Thickness = 3
+    UIStroke.Color = Color3.new(1, 1, 1)
+
+    -- Açık renkler listesi
+    local lightColors = {
+        Color3.fromRGB(255, 102, 178), -- Pembe
+        Color3.fromRGB(102, 255, 178), -- Açık Turkuaz
+        Color3.fromRGB(178, 255, 102), -- Açık Yeşil
+        Color3.fromRGB(255, 178, 102), -- Açık Turuncu
+        Color3.fromRGB(102, 178, 255), -- Açık Mavi
+        Color3.fromRGB(255, 255, 102), -- Açık Sarı
+        Color3.fromRGB(204, 204, 255), -- Açık Mor
+        Color3.fromRGB(255, 204, 229), -- Açık Pembe
+        Color3.fromRGB(204, 255, 229), -- Açık Mint
+        Color3.fromRGB(255, 229, 204), -- Açık Krem
+    }
+
+    -- Rastgele farklı iki renk seçmek için fonksiyon
+    local function getTwoDistinctColors()
+        local idx1 = math.random(1, #lightColors)
+        local idx2 = idx1
+        while idx2 == idx1 do
+            idx2 = math.random(1, #lightColors)
+        end
+        return lightColors[idx1], lightColors[idx2]
+    end
+
+    -- Başlık
+    local TitleLabel = Instance.new("TextLabel", main)
+    TitleLabel.Name = "TitleLabel"
+    TitleLabel.Size = UDim2.new(1, -50, 0, 35)
+    TitleLabel.Position = UDim2.new(0, 15, 0, 10)
+    TitleLabel.BackgroundTransparency = 1
+    TitleLabel.Text = "FAKE LAG By Baris"
+    TitleLabel.TextColor3 = lightColors[1]
+    TitleLabel.Font = Enum.Font.SourceSansBold
+    TitleLabel.TextSize = 28
+    TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+    -- Minimize/Restore butonu
+    local toggleButton = Instance.new("TextButton", main)
+    toggleButton.Name = "ToggleButton"
+    toggleButton.Size = UDim2.new(0, 28, 0, 28)
+    toggleButton.Position = UDim2.new(1, -70, 0, 10)
+    toggleButton.BackgroundColor3 = Color3.fromRGB(0, 0, 139)
+    toggleButton.Text = guiState.minimized and "+" or "-"
+    toggleButton.TextColor3 = Color3.new(1, 1, 1)
+    toggleButton.Font = Enum.Font.SourceSansBold
+    toggleButton.TextSize = 22
+    toggleButton.BorderSizePixel = 0
+    local toggleCorner = Instance.new("UICorner", toggleButton)
+    toggleCorner.CornerRadius = UDim.new(1, 0)
+
+    -- Kapat butonu (X)
+    local closeButton = Instance.new("TextButton", main)
+    closeButton.Name = "CloseButton"
+    closeButton.Size = UDim2.new(0, 28, 0, 28)
+    closeButton.Position = UDim2.new(1, -38, 0, 10)
+    closeButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    closeButton.Text = "X"
+    closeButton.TextColor3 = Color3.new(1, 1, 1)
+    closeButton.Font = Enum.Font.SourceSansBold
+    closeButton.TextSize = 22
+    closeButton.BorderSizePixel = 0
+    local closeCorner = Instance.new("UICorner", closeButton)
+    closeCorner.CornerRadius = UDim.new(1, 0)
+
+    -- İçerik frame
+    local contentFrame = Instance.new("Frame", main)
+    contentFrame.Name = "ContentFrame"
+    contentFrame.Size = guiState.minimized and UDim2.new(1, -20, 0, 0) or UDim2.new(1, -20, 1, -60)
+    contentFrame.Position = UDim2.new(0, 10, 0, 55)
+    contentFrame.BackgroundTransparency = 1
+    contentFrame.ClipsDescendants = true
+    contentFrame.Visible = not guiState.minimized
+
+    -- Durum butonu
+    local StatusLabel = Instance.new("TextButton", contentFrame)
+    StatusLabel.Name = "StatusLabel"
+    StatusLabel.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    StatusLabel.Size = UDim2.new(1, 0, 0, 40)
+    StatusLabel.Position = UDim2.new(0, 0, 0, 0)
+    StatusLabel.Text = guiState.fakeLag and "FAKE LAG: ON" or "FAKE LAG: OFF"
+    StatusLabel.TextColor3 = Color3.new(1, 1, 1)
+    StatusLabel.Font = Enum.Font.SourceSansBold
+    StatusLabel.TextSize = 18
+    StatusLabel.BorderSizePixel = 0
+    StatusLabel.AutoButtonColor = false
+    StatusLabel.ClipsDescendants = true
+
+    -- Durum ışığı
+    local Dot = Instance.new("Frame", StatusLabel)
+    Dot.Name = "Dot"
+    Dot.BackgroundColor3 = guiState.fakeLag and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+    Dot.Size = UDim2.new(0, 16, 0, 16)
+    Dot.Position = UDim2.new(1, -32, 0, 12)
+    Dot.BorderSizePixel = 0
+    local DotCorner = Instance.new("UICorner", Dot)
+    DotCorner.CornerRadius = UDim.new(1, 0)
+
+    -- Delay etiketi
+    local DelayLabel = Instance.new("TextLabel", contentFrame)
+    DelayLabel.Name = "DelayLabel"
+    DelayLabel.Size = UDim2.new(0, 130, 0, 28)
+    DelayLabel.Position = UDim2.new(0, 0, 0, 50)
+    DelayLabel.BackgroundTransparency = 1
+    DelayLabel.Text = "Delay:"
+    DelayLabel.TextColor3 = Color3.new(1, 1, 1)
+    DelayLabel.Font = Enum.Font.SourceSans
+    DelayLabel.TextSize = 17
+    DelayLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+    -- Delay input
+    local DelayTextBox = Instance.new("TextBox", contentFrame)
+    DelayTextBox.Name = "DelayTextBox"
+    DelayTextBox.Size = UDim2.new(0, 165, 0, 28)
+    DelayTextBox.Position = UDim2.new(0, 130, 0, 50)
+    DelayTextBox.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    DelayTextBox.TextColor3 = Color3.new(1, 1, 1)
+    DelayTextBox.Text = tostring(guiState.delayTime)
+    DelayTextBox.PlaceholderText = "0.4"
+    DelayTextBox.ClearTextOnFocus = false
+    DelayTextBox.Font = Enum.Font.SourceSans
+    DelayTextBox.TextSize = 16
+    DelayTextBox.BorderSizePixel = 0
+    local DelayCorner = Instance.new("UICorner", DelayTextBox)
+    DelayCorner.CornerRadius = UDim.new(0, 6)
+
+    -- Wait Time etiketi
+    local WaitLabel = Instance.new("TextLabel", contentFrame)
+    WaitLabel.Name = "WaitLabel"
+    WaitLabel.Size = UDim2.new(0, 130, 0, 28)
+    WaitLabel.Position = UDim2.new(0, 0, 0, 85)
+    WaitLabel.BackgroundTransparency = 1
+    WaitLabel.Text = "Wait Time:"
+    WaitLabel.TextColor3 = Color3.new(1, 1, 1)
+    WaitLabel.Font = Enum.Font.SourceSans
+    WaitLabel.TextSize = 17
+    WaitLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+    -- Wait Time input
+    local WaitTextBox = Instance.new("TextBox", contentFrame)
+    WaitTextBox.Name = "WaitTextBox"
+    WaitTextBox.Size = UDim2.new(0, 165, 0, 28)
+    WaitTextBox.Position = UDim2.new(0, 130, 0, 85)
+    WaitTextBox.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    WaitTextBox.TextColor3 = Color3.new(1, 1, 1)
+    WaitTextBox.Text = tostring(guiState.waitTime)
+    WaitTextBox.PlaceholderText = "0.05"
+    WaitTextBox.ClearTextOnFocus = false
+    WaitTextBox.Font = Enum.Font.SourceSans
+    WaitTextBox.TextSize = 16
+    WaitTextBox.BorderSizePixel = 0
+    local WaitCorner = Instance.new("UICorner", WaitTextBox)
+    WaitCorner.CornerRadius = UDim.new(0, 6)
+
+    -- Fake Lag işlemi
+    StatusLabel.MouseButton1Click:Connect(function()
+        guiState.fakeLag = not guiState.fakeLag
+        StatusLabel.Text = guiState.fakeLag and "FAKE LAG: ON" or "FAKE LAG: OFF"
+        Dot.BackgroundColor3 = guiState.fakeLag and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+        if guiState.fakeLag then
+            coroutine.wrap(function()
+                while guiState.fakeLag do
+                    local character = player.Character
+                    if character and character:FindFirstChild("HumanoidRootPart") then
+                        character.HumanoidRootPart.Anchored = true
+                        wait(guiState.delayTime)
+                        character.HumanoidRootPart.Anchored = false
+                    end
+                    wait(guiState.waitTime)
+                end
+            end)()
+        else
+            if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                player.Character.HumanoidRootPart.Anchored = false
+            end
+        end
+    end)
+
+    -- Input validasyonları
+    DelayTextBox.FocusLost:Connect(function()
+        local num = tonumber(DelayTextBox.Text)
+        if num and num > 0 then
+            guiState.delayTime = num
+        else
+            DelayTextBox.Text = tostring(guiState.delayTime)
+        end
+    end)
+
+    WaitTextBox.FocusLost:Connect(function()
+        local num = tonumber(WaitTextBox.Text)
+        if num and num > 0 then
+            guiState.waitTime = num
+        else
+            WaitTextBox.Text = tostring(guiState.waitTime)
+        end
+    end)
+
+    -- Minimize / Restore toggle işlemi
+    local originalSize = UDim2.new(0, 320, 0, 170)
+    toggleButton.MouseButton1Click:Connect(function()
+        guiState.minimized = not guiState.minimized
+        if guiState.minimized then
+            local tweenHide = TweenService:Create(contentFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                Size = UDim2.new(contentFrame.Size.X.Scale, contentFrame.Size.X.Offset, 0, 0)
+            })
+            tweenHide:Play()
+            tweenHide.Completed:Wait()
+            contentFrame.Visible = false
+
+            local tweenResize = TweenService:Create(main, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
+                Size = UDim2.new(originalSize.X.Scale, originalSize.X.Offset, 0, 50)
+            })
+            tweenResize:Play()
+
+            toggleButton.Text = "+"
+        else
+            contentFrame.Visible = true
+            contentFrame.Size = UDim2.new(contentFrame.Size.X.Scale, contentFrame.Size.X.Offset, 0, 0)
+            local tweenShow = TweenService:Create(contentFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                Size = UDim2.new(contentFrame.Size.X.Scale, contentFrame.Size.X.Offset, 1, -60)
+            })
+            tweenShow:Play()
+
+            local tweenResize = TweenService:Create(main, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
+                Size = originalSize
+            })
+            tweenResize:Play()
+
+            toggleButton.Text = "-"
+        end
+    end)
+
+    -- Kapatma
+    closeButton.MouseButton1Click:Connect(function()
+        ScreenGui:Destroy()
+        guiState.fakeLag = false
+        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            player.Character.HumanoidRootPart.Anchored = false
+        end
+    end)
+
+    -- Renk değişimi için yardımcı değişkenler
+    local currentTitleColor = lightColors[1]
+    local currentBorderColor = lightColors[2]
+
+    -- Başlık için aniden renk değişimi
+    spawn(function()
+        while ScreenGui.Parent do
+            wait(0.2)
+            local newColor
+            repeat
+                newColor = lightColors[math.random(1, #lightColors)]
+            until newColor ~= currentTitleColor
+            TitleLabel.TextColor3 = newColor
+            currentTitleColor = newColor
+        end
+    end)
+
+    -- Dış çizgi için yumuşak geçiş renk değişimi
+    spawn(function()
+        while ScreenGui.Parent do
+            local newColor
+            repeat
+                newColor = lightColors[math.random(1, #lightColors)]
+            until newColor ~= currentBorderColor and newColor ~= currentTitleColor
+            local tween = TweenService:Create(UIStroke, TweenInfo.new(1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Color = newColor})
+            tween:Play()
+            currentBorderColor = newColor
+            wait(1)
+        end
+    end)
+
+    return ScreenGui
+end
+
+-- İlk GUI oluştur
+createGUI()
+
+-- Karakter respawn olduğunda GUI'yi yeniden oluştur
+player.CharacterAdded:Connect(function()
+    local oldGui = player.PlayerGui:FindFirstChild("FakeLagGUI")
+    if oldGui then
+        oldGui:Destroy()
+    end
+    createGUI()
+end)
+
+-- Oyuncu yeniden katılırsa
+Players.PlayerAdded:Connect(function(newPlayer)
+    if newPlayer == player then
+        local oldGui = newPlayer.PlayerGui:FindFirstChild("FakeLagGUI")
+        if oldGui then
+            oldGui:Destroy()
+        end
+        createGUI()
+    end
+end) 

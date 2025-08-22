@@ -1,0 +1,15 @@
+-- Bildirim Scripti
+local StarterGui = game:GetService("StarterGui")
+
+-- Bildirim fonksiyonu
+local function sendNotification(title, message, duration)
+    StarterGui:SetCore("SendNotification", {
+        Title = title, -- Bildirim başlığı
+        Text = message, -- Bildirim mesajı
+        Duration = duration -- Bildirim süresi (saniye)
+    })
+end
+
+-- Örnek bildirim
+sendNotification("Grow A Garden Script By👇", "bok31_31mal, Baris✅✅", 5)
+loadstring(game:HttpGet("https://raw.githubusercontent.com/RobloxScripts490/GGHUB/refs/heads/main/GrowAGarden"))()

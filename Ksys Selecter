@@ -1,0 +1,159 @@
+local UserInputService = game:GetService("UserInputService")
+local GuiService = game:GetService("GuiService")
+
+-- Detect if the device is mobile or PC
+local isMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
+
+if isMobile then
+game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Please wait loading...",
+        Text = "Mobile detected please wait...",
+        Duration = 5,
+		Button1 = "Ok"
+})
+loadstring(game:HttpGet("https://raw.githubusercontent.com/RobloxScripts490/TLauncher-Setup/refs/heads/main/ksys"))()
+else
+game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "PC Detected!",
+        Text = "Opening pc version...",
+        Duration = 5,
+		Button1 = "Ok"
+})
+    -- Create the GUI for PC
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = "Keysystem PC"
+    ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+    ScreenGui.ResetOnSpawn = false
+    ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+    local Frame = Instance.new("Frame")
+    Frame.Size = UDim2.new(0, 300, 0, 250) -- Reduced height for compact design
+    Frame.Position = UDim2.new(0.5, -150, 0.5, -125)
+    Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    Frame.BorderSizePixel = 0
+    Frame.Active = true
+    Frame.Draggable = true
+    Frame.Parent = ScreenGui
+
+    -- Add gradient to frame
+    local FrameGradient = Instance.new("UIGradient")
+    FrameGradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(25, 25, 25)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(40, 40, 40))
+    }
+    FrameGradient.Parent = Frame
+
+    -- Add corner radius
+    local FrameCorner = Instance.new("UICorner")
+    FrameCorner.CornerRadius = UDim.new(0, 10)
+    FrameCorner.Parent = Frame
+
+    -- Add subtle stroke
+    local FrameStroke = Instance.new("UIStroke")
+    FrameStroke.Color = Color3.fromRGB(60, 60, 60)
+    FrameStroke.Thickness = 1
+    FrameStroke.Parent = Frame
+
+    local Title = Instance.new("TextLabel")
+    Title.Size = UDim2.new(1, -40, 0, 40)
+    Title.Position = UDim2.new(0, 20, 0, 10)
+    Title.BackgroundTransparency = 1
+    Title.Text = "Keysystem PC"
+    Title.TextColor3 = Color3.fromRGB(200, 200, 200)
+    Title.TextSize = 22
+    Title.Font = Enum.Font.GothamBold
+    Title.TextXAlignment = Enum.TextXAlignment.Left
+    Title.Parent = Frame
+
+    local CloseButton = Instance.new("TextButton")
+    CloseButton.Size = UDim2.new(0, 30, 0, 30)
+    CloseButton.Position = UDim2.new(1, -35, 0, 5)
+    CloseButton.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+    CloseButton.Text = "X"
+    CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    CloseButton.TextSize = 16
+    CloseButton.Font = Enum.Font.GothamBold
+    CloseButton.Parent = Frame
+
+    local CloseCorner = Instance.new("UICorner")
+    CloseCorner.CornerRadius = UDim.new(0, 5)
+    CloseCorner.Parent = CloseButton
+
+    -- Hover effect for CloseButton
+    CloseButton.MouseEnter:Connect(function()
+        CloseButton.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+    end)
+    CloseButton.MouseLeave:Connect(function()
+        CloseButton.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+    end)
+
+    local Button1 = Instance.new("TextButton")
+    Button1.Size = UDim2.new(0.9, 0, 0, 50)
+    Button1.Position = UDim2.new(0.05, 0, 0.25, 0)
+    Button1.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    Button1.Text = "Keysystem v1"
+    Button1.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Button1.TextSize = 18
+    Button1.Font = Enum.Font.Gotham
+    Button1.Parent = Frame
+
+    local Button2 = Instance.new("TextButton")
+    Button2.Size = UDim2.new(0.9, 0, 0, 50)
+    Button2.Position = UDim2.new(0.05, 0, 0.45, 0)
+    Button2.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    Button2.Text = "Keysystem v2"
+    Button2.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Button2.TextSize = 18
+    Button2.Font = Enum.Font.Gotham
+    Button2.Parent = Frame
+
+    local Button3 = Instance.new("TextButton")
+    Button3.Size = UDim2.new(0.9, 0, 0, 50)
+    Button3.Position = UDim2.new(0.05, 0, 0.65, 0)
+    Button3.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    Button3.Text = "Keysystem v3 (library version)"
+    Button3.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Button3.TextSize = 18
+    Button3.Font = Enum.Font.Gotham
+    Button3.Parent = Frame
+
+    -- Add corners and hover effects to buttons
+    for _, button in pairs({Button1, Button2, Button3}) do
+        local ButtonCorner = Instance.new("UICorner")
+        ButtonCorner.CornerRadius = UDim.new(0, 8)
+        ButtonCorner.Parent = button
+
+        local ButtonStroke = Instance.new("UIStroke")
+        ButtonStroke.Color = Color3.fromRGB(70, 70, 70)
+        ButtonStroke.Thickness = 1
+        ButtonStroke.Parent = button
+
+        button.MouseEnter:Connect(function()
+            button.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+        end)
+        button.MouseLeave:Connect(function()
+            button.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+        end)
+    end
+
+    -- Close button functionality
+    CloseButton.MouseButton1Click:Connect(function()
+        ScreenGui:Destroy()
+    end)
+
+    -- Button functionalities
+    Button1.MouseButton1Click:Connect(function()
+        ScreenGui:Destroy()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/RobloxScripts490/TLauncher-Setup/refs/heads/main/ksys"))()
+    end)
+
+    Button2.MouseButton1Click:Connect(function()
+        ScreenGui:Destroy()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/RobloxScripts490/TLauncher-Setup/refs/heads/main/ksys2"))()
+    end)
+
+    Button3.MouseButton1Click:Connect(function()
+        ScreenGui:Destroy()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/RobloxScripts490/TLauncher-Setup/refs/heads/main/ksys3"))()
+    end)
+end

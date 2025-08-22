@@ -1,0 +1,139 @@
+-- Load OrionLib from the provided URL
+local OrionLib = loadstring(game:HttpGet("https://pastefy.app/CkXdxr7A/raw"))()
+
+local Player = game.Players.LocalPlayer
+
+-- Create the main window with similar settings to the example
+local Window = OrionLib:MakeWindow({
+    Name = "Key System FE Tornado Parts",
+    HidePremium = false,
+    SaveConfig = true,
+    ConfigFolder = nil,
+    IntroEnabled = true,
+    IntroText = "Welcome, " .. Player.Name,
+    IntroIcon = "rbxassetid://4483345998"
+})
+
+-- Notification for login
+OrionLib:MakeNotification({
+    Name = "Logged In!",
+    Content = "You are logged in as " .. Player.Name .. ".",
+    Image = "rbxassetid://4483345998",
+    Time = 5
+})
+
+
+OrionLib:MakeNotification({
+    Name = "Script By Aras,Keystem by Baris",
+    Content = "Keysystem By Baris!",
+    Image = "rbxassetid://4483345998",
+    Time = 5
+})
+
+
+-- Key system variables
+local keyUrl = "https://raw.githubusercontent.com/TestAccountLOL-files/GGHUB-KEY/refs/heads/main/KEY"
+_G.KeyInput = ""
+
+-- Function to fetch the key from the URL
+local function GetKeyFromUrl()
+    local success, response = pcall(function()
+        return game:HttpGet(keyUrl)
+    end)
+    if success then
+        return response:match("^%s*(.-)%s*$") -- Trim whitespace
+    else
+        warn("Failed to fetch key from URL: " .. response)
+        return nil
+    end
+end
+
+-- Function to handle correct key entry
+function MakeScriptHub()
+    OrionLib:Destroy()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/Arasswys/roblox/refs/heads/main/script%20tornado"))()
+    -- Destroy the GUI when the correct key is entered
+end
+
+-- Notification for correct key
+function CorrectKeyNotification()
+    OrionLib:MakeNotification({
+        Name = "Correct Key!",
+        Content = "You have entered the correct key!",
+        Image = "rbxassetid://4483345998",
+        Time = 5
+    })
+end
+
+-- Notification for incorrect key
+function IncorrectKeyNotification()
+    OrionLib:MakeNotification({
+        Name = "Incorrect Key!",
+        Content = "You have entered the wrong key!",
+        Image = "rbxassetid://4483345998",
+        Time = 5
+    })
+end
+
+-- Create the Key tab
+local Tab = Window:MakeTab({
+    Name = "Key",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+-- Add a textbox for key input
+Tab:AddTextbox({
+    Name = "Enter Key",
+    Default = "",
+    TextDisappear = true,
+    Callback = function(Value)
+        _G.KeyInput = Value
+    end
+})
+
+-- Add a button to check the key
+Tab:AddButton({
+    Name = "Check Key",
+    Callback = function()
+        local correctKey = GetKeyFromUrl()
+        if correctKey and _G.KeyInput == correctKey then
+            CorrectKeyNotification()
+            MakeScriptHub() -- Load the script and destroy GUI
+        else
+            IncorrectKeyNotification()
+        end
+    end
+})
+
+-- Add a button to copy the key to clipboard
+Tab:AddButton({
+    Name = "Get Key",
+    Callback = function()
+        setclipboard("https://loot-link.com/s?lKItHsdQ")
+        OrionLib:MakeNotification({
+            Name = "Link Copied!",
+            Content = "The key link has been copied to your clipboard!",
+            Image = "rbxassetid://4483345998",
+            Time = 5
+        })
+    end
+})
+
+
+Tab:AddButton({
+    Name = "Credits",
+    Callback = function()
+        setclipboard("https://loot-link.com/s?lKItHsdQ")
+        OrionLib:MakeNotification({
+            Name = "Script By Aras, Keysystem By Baris",
+            Content = "Aras made script, Keysystem created by Baris",
+            Image = "rbxassetid://4483345998",
+            Time = 5
+        })
+    end
+})
+
+
+-- Initialize OrionLib (required for proper functionality)
+OrionLib:Init()

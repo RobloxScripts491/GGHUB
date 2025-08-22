@@ -1,0 +1,612 @@
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
+local Player = Players.LocalPlayer
+
+-- Create ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Parent = Player.PlayerGui
+screenGui.Name = "TeleportGui"
+screenGui.ResetOnSpawn = false
+
+-- Create Frame (GUI container)
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 180, 0, 450)
+frame.Position = UDim2.new(0.5, -90, 0.5, -225)
+frame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+frame.BorderSizePixel = 2
+frame.Parent = screenGui
+
+-- Create Title Bar
+local titleBar = Instance.new("Frame")
+titleBar.Size = UDim2.new(1, 0, 0, 30)
+titleBar.Position = UDim2.new(0, 0, 0, 0)
+titleBar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+titleBar.BorderSizePixel = 0
+titleBar.Parent = frame
+
+-- Create Title Text
+local titleText = Instance.new("TextLabel")
+titleText.Size = UDim2.new(0, 120, 1, 0)
+titleText.Position = UDim2.new(0, 5, 0, 0)
+titleText.BackgroundTransparency = 1
+titleText.Text = "TROLL GUI BY Baris"
+titleText.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleText.TextSize = 16
+titleText.Font = Enum.Font.SourceSansBold
+titleText.TextXAlignment = Enum.TextXAlignment.Left
+titleText.Parent = titleBar
+
+-- Create Close Button (X)
+local closeButton = Instance.new("TextButton")
+closeButton.Size = UDim2.new(0, 25, 0, 25)
+closeButton.Position = UDim2.new(1, -30, 0, 2)
+closeButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+closeButton.Text = "X"
+closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeButton.TextSize = 16
+closeButton.Font = Enum.Font.SourceSansBold
+closeButton.Parent = titleBar
+
+-- Create Minimize Button (-)
+local minimizeButton = Instance.new("TextButton")
+minimizeButton.Size = UDim2.new(0, 25, 0, 25)
+minimizeButton.Position = UDim2.new(1, -60, 0, 2)
+minimizeButton.BackgroundColor3 = Color3.fromRGB(255, 165, 0)
+minimizeButton.Text = "-"
+minimizeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+minimizeButton.TextSize = 16
+minimizeButton.Font = Enum.Font.SourceSansBold
+minimizeButton.Parent = titleBar
+
+-- Create Content Frame (for buttons)
+local contentFrame = Instance.new("Frame")
+contentFrame.Size = UDim2.new(1, 0, 1, -30)
+contentFrame.Position = UDim2.new(0, 0, 0, 30)
+contentFrame.BackgroundTransparency = 1
+contentFrame.Parent = frame
+
+-- Smooth Dragging
+local dragging = false
+local dragStart
+local startPos
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if not gameProcessed and input.UserInputType == Enum.UserInputType.MouseButton1 then
+        local mousePos = input.Position
+        local titlePos = titleBar.AbsolutePosition
+        local titleSize = titleBar.AbsoluteSize
+        if mousePos.X >= titlePos.X and mousePos.X <= titlePos.X + titleSize.X and
+           mousePos.Y >= titlePos.Y and mousePos.Y <= titlePos.Y + titleSize.Y then
+            dragging = true
+            dragStart = mousePos
+            startPos = frame.Position
+        end
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input, gameProcessed)
+    if not gameProcessed and dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = input.Position - dragStart
+        frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input, gameProcessed)
+    if not gameProcessed and input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = false
+    end
+end)
+
+-- Minimize Logic
+local isMinimized = false
+minimizeButton.MouseButton1Click:Connect(function()
+    isMinimized = not isMinimized
+    local targetSize = isMinimized and UDim2.new(0, 180, 0, 30) or UDim2.new(0, 180, 0, 450)
+    local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+    local tween = TweenService:Create(frame, tweenInfo, {Size = targetSize})
+    contentFrame.Visible = not isMinimized
+    tween:Play()
+end)
+
+-- Create TROLL Button
+local trollButton = Instance.new("TextButton")
+trollButton.Size = UDim2.new(0, 160, 0, 40)
+trollButton.Position = UDim2.new(0, 10, 0, 10)
+trollButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+trollButton.Text = "TROLL: OFF"
+trollButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+trollButton.TextSize = 14
+trollButton.Font = Enum.Font.SourceSans
+trollButton.TextScaled = true
+trollButton.TextWrapped = true
+trollButton.Parent = contentFrame
+
+-- Create BUTTON TROLL Button
+local buttonTrollButton = Instance.new("TextButton")
+buttonTrollButton.Size = UDim2.new(0, 160, 0, 40)
+buttonTrollButton.Position = UDim2.new(0, 10, 0, 60)
+buttonTrollButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+buttonTrollButton.Text = "BUTTON TROLL: OFF"
+buttonTrollButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+buttonTrollButton.TextSize = 14
+buttonTrollButton.Font = Enum.Font.SourceSans
+buttonTrollButton.TextScaled = true
+buttonTrollButton.TextWrapped = true
+buttonTrollButton.Parent = contentFrame
+
+-- Create ANTI FALL Button
+local antiFallButton = Instance.new("TextButton")
+antiFallButton.Size = UDim2.new(0, 160, 0, 40)
+antiFallButton.Position = UDim2.new(0, 10, 0, 110)
+antiFallButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+antiFallButton.Text = "ANTI FALL: OFF"
+antiFallButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+antiFallButton.TextSize = 14
+antiFallButton.Font = Enum.Font.SourceSans
+antiFallButton.TextScaled = true
+antiFallButton.TextWrapped = true
+antiFallButton.Parent = contentFrame
+
+-- Create Goto End Button
+local gotoEndButton = Instance.new("TextButton")
+gotoEndButton.Size = UDim2.new(0, 160, 0, 40)
+gotoEndButton.Position = UDim2.new(0, 10, 0, 160)
+gotoEndButton.BackgroundColor3 = Color3.fromRGB(100, 100, 255)
+gotoEndButton.Text = "Goto End"
+gotoEndButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+gotoEndButton.TextSize = 14
+gotoEndButton.Font = Enum.Font.SourceSans
+gotoEndButton.TextScaled = true
+gotoEndButton.TextWrapped = true
+gotoEndButton.Parent = contentFrame
+
+-- Create Goto Troll Zone Button
+local gotoTrollZoneButton = Instance.new("TextButton")
+gotoTrollZoneButton.Size = UDim2.new(0, 160, 0, 40)
+gotoTrollZoneButton.Position = UDim2.new(0, 10, 0, 210)
+gotoTrollZoneButton.BackgroundColor3 = Color3.fromRGB(100, 100, 255)
+gotoTrollZoneButton.Text = "Goto Troll Zone"
+gotoTrollZoneButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+gotoTrollZoneButton.TextSize = 14
+gotoTrollZoneButton.Font = Enum.Font.SourceSans
+gotoTrollZoneButton.TextScaled = true
+gotoTrollZoneButton.TextWrapped = true
+gotoTrollZoneButton.Parent = contentFrame
+
+-- Create Coils Button
+local coilsButton = Instance.new("TextButton")
+coilsButton.Size = UDim2.new(0, 160, 0, 40)
+coilsButton.Position = UDim2.new(0, 10, 0, 260)
+coilsButton.BackgroundColor3 = Color3.fromRGB(100, 100, 255)
+coilsButton.Text = "Coils"
+coilsButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+coilsButton.TextSize = 14
+coilsButton.Font = Enum.Font.SourceSans
+coilsButton.TextScaled = true
+coilsButton.TextWrapped = true
+coilsButton.Parent = contentFrame
+
+-- Create Rejoin Button
+local rejoinButton = Instance.new("TextButton")
+rejoinButton.Size = UDim2.new(0, 160, 0, 40)
+rejoinButton.Position = UDim2.new(0, 10, 0, 310)
+rejoinButton.BackgroundColor3 = Color3.fromRGB(100, 100, 255)
+rejoinButton.Text = "Rejoin"
+rejoinButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+rejoinButton.TextSize = 14
+rejoinButton.Font = Enum.Font.SourceSans
+rejoinButton.TextScaled = true
+rejoinButton.TextWrapped = true
+rejoinButton.Parent = contentFrame
+
+-- Create Goto Other Server Button
+local gotoOtherServerButton = Instance.new("TextButton")
+gotoOtherServerButton.Size = UDim2.new(0, 160, 0, 40)
+gotoOtherServerButton.Position = UDim2.new(0, 10, 0, 360)
+gotoOtherServerButton.BackgroundColor3 = Color3.fromRGB(100, 100, 255)
+gotoOtherServerButton.Text = "Goto Other Server"
+gotoOtherServerButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+gotoOtherServerButton.TextSize = 14
+gotoOtherServerButton.Font = Enum.Font.SourceSans
+gotoOtherServerButton.TextScaled = true
+gotoOtherServerButton.TextWrapped = true
+gotoOtherServerButton.Parent = contentFrame
+
+-- Teleport function (for TROLL and BUTTON TROLL)
+local function teleportParts(partName, duration, source)
+    local success, errorMsg = pcall(function()
+        local character = Player.Character
+        if not character or not character:FindFirstChild("HumanoidRootPart") then
+            error("Character or HumanoidRootPart not found!")
+        end
+        local humanoidRootPart = character.HumanoidRootPart
+        print(source .. ": Searching for parts named '" .. partName .. "'...")
+        
+        local partsToTeleport = {}
+        for _, descendant in ipairs(Workspace:GetDescendants()) do
+            if descendant:IsA("BasePart") and descendant.Name == partName then
+                table.insert(partsToTeleport, descendant)
+            end
+        end
+        
+        if #partsToTeleport == 0 then
+            error("No parts named '" .. partName .. "' found!")
+        end
+        
+        print(source .. ": " .. #partsToTeleport .. " parts found, teleporting...")
+        for _, part in ipairs(partsToTeleport) do
+            if part and part.Parent then
+                local originalCFrame = part.CFrame
+                local originalAnchored = part.Anchored
+                local originalCanCollide = part.CanCollide
+                local originalTransparency = part.Transparency
+                
+                part.Anchored = true
+                part.CanCollide = false
+                if partName == "Gudock" then
+                    part.Transparency = 1
+                end
+                part.CFrame = humanoidRootPart.CFrame
+                
+                wait(duration)
+                
+                if part and part.Parent then
+                    part.CFrame = originalCFrame
+                    part.Anchored = originalAnchored
+                    part.CanCollide = originalCanCollide
+                    if partName == "Gudock" then
+                        part.Transparency = originalTransparency
+                    end
+                end
+            end
+        end
+        print(source .. ": Parts returned to original positions.")
+    end)
+    
+    if not success then
+        warn(source .. " Error: " .. tostring(errorMsg))
+        return false
+    end
+    return true
+end
+
+-- Goto Troll Zone teleport function (for ANTI FALL)
+local function teleportToTrollZone()
+    local success, errorMsg = pcall(function()
+        if Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
+            Player.Character.HumanoidRootPart.CFrame = CFrame.new(-69.7643051, 150.283585, -74.8606033, -0.0131014595, 4.37139285e-08, -0.999914169, 1.35947758e-13, 1, 4.37176801e-08, 0.999914169, 5.72629444e-10, -0.0131014595)
+            print("ANTI FALL: 1.6 seconds of falling detected, teleported to Troll Zone!")
+        else
+            error("Character or HumanoidRootPart not found!")
+        end
+    end)
+    if not success then
+        warn("ANTI FALL Teleport Error: " .. tostring(errorMsg))
+        return false
+    end
+    return true
+end
+
+-- TROLL Button Logic
+local isTrollActive = false
+trollButton.MouseButton1Click:Connect(function()
+    isTrollActive = not isTrollActive
+    if isTrollActive then
+        trollButton.Text = "TROLL: ON"
+        trollButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+        print("TROLL ON: '사라지는 파트' parts will be continuously teleported.")
+        spawn(function()
+            while isTrollActive do
+                teleportParts("사라지는 파트", 0.1, "TROLL Button")
+                wait(0.2)
+            end
+            print("TROLL loop stopped.")
+        end)
+    else
+        trollButton.Text = "TROLL: OFF"
+        trollButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+        isTrollActive = false
+        print("TROLL OFF: Teleport stopped.")
+    end
+end)
+
+-- BUTTON TROLL Button Logic
+local isButtonTrollActive = false
+buttonTrollButton.MouseButton1Click:Connect(function()
+    isButtonTrollActive = not isButtonTrollActive
+    if isButtonTrollActive then
+        buttonTrollButton.Text = "BUTTON TROLL: ON"
+        buttonTrollButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+        print("BUTTON TROLL ON: 'Gudock' parts will be continuously teleported.")
+        spawn(function()
+            while isButtonTrollActive do
+                teleportParts("Gudock", 0.1, "BUTTON TROLL Button")
+                wait(0.2)
+            end
+            print("BUTTON TROLL loop stopped.")
+        end)
+    else
+        buttonTrollButton.Text = "BUTTON TROLL: OFF"
+        buttonTrollButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+        isButtonTrollActive = false
+        print("BUTTON TROLL OFF: Teleport stopped.")
+    end
+end)
+
+-- ANTI FALL Button Logic
+local isAntiFallActive = false
+local antiFallConnection
+antiFallButton.MouseButton1Click:Connect(function()
+    isAntiFallActive = not isAntiFallActive
+    if isAntiFallActive then
+        antiFallButton.Text = "ANTI FALL: ON"
+        antiFallButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+        print("ANTI FALL ON: 1.6-second fall detection active.")
+        local fallTime = 0
+        antiFallConnection = RunService.Heartbeat:Connect(function(deltaTime)
+            if isAntiFallActive and Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") and Player.Character:FindFirstChild("Humanoid") then
+                local success, errorMsg = pcall(function()
+                    local humanoid = Player.Character.Humanoid
+                    if humanoid.FloorMaterial == Enum.Material.Air then
+                        fallTime = fallTime + deltaTime
+                        if fallTime >= 1.6 then
+                            teleportToTrollZone()
+                            fallTime = 0
+                        end
+                    else
+                        fallTime = 0
+                    end
+                end)
+                if not success then
+                    warn("ANTI FALL Check Error: " .. tostring(errorMsg))
+                end
+            end
+        end)
+    else
+        antiFallButton.Text = "ANTI FALL: OFF"
+        antiFallButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+        isAntiFallActive = false
+        if antiFallConnection then
+            antiFallConnection:Disconnect()
+            antiFallConnection = nil
+        end
+        print("ANTI FALL OFF: Fall detection stopped.")
+    end
+end)
+
+-- Goto End Button Logic
+gotoEndButton.MouseButton1Click:Connect(function()
+    local success, errorMsg = pcall(function()
+        if Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
+            Player.Character.HumanoidRootPart.CFrame = CFrame.new(274.562683, 349.410706, -32.9934654, -0.0361356959, -1.16902875e-07, 0.999346912, -3.40690171e-12, 1, 1.16979152e-07, -0.999346912, 4.22371826e-09, -0.0361356959)
+            print("Teleported to End location!")
+        else
+            error("Character or HumanoidRootPart not found!")
+        end
+    end)
+    if not success then
+        warn("Goto End error: " .. tostring(errorMsg))
+    end
+end)
+
+-- Goto Troll Zone Button Logic
+gotoTrollZoneButton.MouseButton1Click:Connect(function()
+    local success, errorMsg = pcall(function()
+        if Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
+            Player.Character.HumanoidRootPart.CFrame = CFrame.new(-69.7643051, 150.283585, -74.8606033, -0.0131014595, 4.37139285e-08, -0.999914169, 1.35947758e-13, 1, 4.37176801e-08, 0.999914169, 5.72629444e-10, -0.0131014595)
+            print("Teleported to Troll Zone location!")
+        else
+            error("Character or HumanoidRootPart not found!")
+        end
+    end)
+    if not success then
+        warn("Goto Troll Zone error: " .. tostring(errorMsg))
+    end
+end)
+
+-- Coils Button Logic
+coilsButton.MouseButton1Click:Connect(function()
+    local success, errorMsg = pcall(function()
+        if game.HttpGet then
+            local script = game:HttpGet("https://rawscripts.net/raw/Troll-is-a-pinning-tower-2-Inf-Jump-Coil-Ice-Coil-35367")
+            loadstring(script)()
+            print("Coils script executed!")
+        else
+            error("HttpGet not supported!")
+        end
+    end)
+    if not success then
+        warn("Coils script failed to execute: " .. tostring(errorMsg))
+    end
+end)
+
+-- Rejoin Button Logic
+rejoinButton.MouseButton1Click:Connect(function()
+    local success, errorMsg = pcall(function()
+        TeleportService:Teleport(game.PlaceId, Player)
+    end)
+    if not success then
+        warn("Rejoin failed: " .. tostring(errorMsg))
+    else
+        print("Rejoining...")
+    end
+end)
+
+-- Goto Other Server Button Logic
+gotoOtherServerButton.MouseButton1Click:Connect(function()
+    local success, errorMsg = pcall(function()
+        local PlaceID = game.PlaceId
+        local AllIDs = {}
+        local foundAnything = ""
+        local actualHour = os.date("!*t").hour
+
+        local function TPReturner()
+            local Site
+            if foundAnything == "" then
+                Site = HttpService:JSONDecode(game:HttpGet('https://games.roblox.com/v1/games/' .. PlaceID .. '/servers/Public?sortOrder=Asc&limit=100'))
+            else
+                Site = HttpService:JSONDecode(game:HttpGet('https://games.roblox.com/v1/games/' .. PlaceID .. '/servers/Public?sortOrder=Asc&limit=100&cursor=' .. foundAnything))
+            end
+            local ID = ""
+            if Site.nextPageCursor and Site.nextPageCursor ~= "null" and Site.nextPageCursor ~= nil then
+                foundAnything = Site.nextPageCursor
+            end
+            local num = 0
+            for i, v in pairs(Site.data) do
+                local Possible = true
+                ID = tostring(v.id)
+                if tonumber(v.maxPlayers) > tonumber(v.playing) then
+                    for _, Existing in pairs(AllIDs) do
+                        if num ~= 0 then
+                            if ID == tostring(Existing) then
+                                Possible = false
+                            end
+                        else
+                            if tonumber(actualHour) ~= tonumber(Existing) then
+                                AllIDs = {}
+                                table.insert(AllIDs, actualHour)
+                            end
+                        end
+                        num = num + 1
+                    end
+                    if Possible then
+                        table.insert(AllIDs, ID)
+                        wait()
+                        local tpSuccess, tpError = pcall(function()
+                            TeleportService:TeleportToPlaceInstance(PlaceID, ID, Player)
+                        end)
+                        if tpSuccess then
+                            print("Teleported to another server!")
+                        else
+                            error("Teleport failed: " .. tostring(tpError))
+                        end
+                        wait(4)
+                    end
+                end
+            end
+        end
+
+        local function Teleport()
+            while wait() do
+                local tpSuccess, tpError = pcall(function()
+                    TPReturner()
+                    if foundAnything ~= "" then
+                        TPReturner()
+                    end
+                end)
+                if not tpSuccess then
+                    error("Server hop error: " .. tostring(tpError))
+                end
+            end
+        end
+
+        spawn(function()
+            Teleport()
+        end)
+    end)
+    if not success then
+        warn("Goto Other Server error: " .. tostring(errorMsg))
+    end
+end)
+
+-- Close Button Logic with Warning GUI
+closeButton.MouseButton1Click:Connect(function()
+    local success, errorMsg = pcall(function()
+        -- Check if any toggle buttons are ON
+        if isTrollActive or isButtonTrollActive or isAntiFallActive then
+            print("Active buttons detected, showing warning GUI...")
+            -- Create Warning GUI
+            local warningGui = Instance.new("ScreenGui")
+            warningGui.Name = "WarningGui"
+            warningGui.ResetOnSpawn = false
+            warningGui.Parent = Player.PlayerGui
+
+            local warningFrame = Instance.new("Frame")
+            warningFrame.Size = UDim2.new(0, 300, 0, 150)
+            warningFrame.Position = UDim2.new(0.5, -150, 0.5, -75)
+            warningFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+            warningFrame.BorderSizePixel = 2
+            warningFrame.Parent = warningGui
+
+            local warningText = Instance.new("TextLabel")
+            warningText.Size = UDim2.new(1, -20, 0, 80)
+            warningText.Position = UDim2.new(0, 10, 0, 10)
+            warningText.BackgroundTransparency = 1
+            warningText.Text = "There are active buttons. Do you want to continue?"
+            warningText.TextColor3 = Color3.fromRGB(255, 255, 255)
+            warningText.TextSize = 16
+            warningText.Font = Enum.Font.SourceSans
+            warningText.TextWrapped = true
+            warningText.Parent = warningFrame
+
+            local yesButton = Instance.new("TextButton")
+            yesButton.Size = UDim2.new(0, 100, 0, 40)
+            yesButton.Position = UDim2.new(0, 40, 1, -50)
+            yesButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+            yesButton.Text = "Yes"
+            yesButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+            yesButton.TextSize = 16
+            yesButton.Font = Enum.Font.SourceSansBold
+            yesButton.Parent = warningFrame
+            yesButton.MouseButton1Click:Connect(function()
+                print("Yes button clicked, closing all GUIs.")
+                -- Clean up active processes
+                isTrollActive = false
+                isButtonTrollActive = false
+                isAntiFallActive = false
+                if antiFallConnection then
+                    antiFallConnection:Disconnect()
+                    antiFallConnection = nil
+                end
+                -- Destroy GUIs
+                if warningGui then warningGui:Destroy() end
+                if screenGui then screenGui:Destroy() end
+                print("All GUIs closed!")
+            end)
+
+            local noButton = Instance.new("TextButton")
+            noButton.Size = UDim2.new(0, 100, 0, 40)
+            noButton.Position = UDim2.new(1, -140, 1, -50)
+            noButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+            noButton.Text = "No"
+            noButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+            noButton.TextSize = 16
+            noButton.Font = Enum.Font.SourceSansBold
+            noButton.Parent = warningFrame
+            noButton.MouseButton1Click:Connect(function()
+                print("No button clicked, closing warning GUI only.")
+                if warningGui then warningGui:Destroy() end
+                print("Warning GUI closed, main GUI remains.")
+            end)
+        else
+            print("No active buttons, closing main GUI directly.")
+            -- Clean up active processes
+            isTrollActive = false
+            isButtonTrollActive = false
+            isAntiFallActive = false
+            if antiFallConnection then
+                antiFallConnection:Disconnect()
+                antiFallConnection = nil
+            end
+            if screenGui then screenGui:Destroy() end
+            print("GUI closed!")
+        end
+    end)
+    if not success then
+        warn("Close Button Error: " .. tostring(errorMsg))
+    end
+end)
+
+-- List Workspace parts (for debugging)
+print("Checking BaseParts in Workspace...")
+for _, descendant in ipairs(Workspace:GetDescendants()) do
+    if descendant:IsA("BasePart") then
+        print("Part name: " .. descendant.Name)
+    end
+end
+print("TROLL GUI loaded! Test TROLL, BUTTON TROLL, and ANTI FALL buttons.")

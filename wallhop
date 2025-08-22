@@ -1,0 +1,551 @@
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local StarterGui = game:GetService("StarterGui")
+
+-- Wait for LocalPlayer and PlayerGui
+local LocalPlayer = Players.LocalPlayer or Players.PlayerAdded:Wait()
+local PlayerGui
+local attempts = 0
+local maxAttempts = 10
+while not PlayerGui and attempts < maxAttempts do
+    PlayerGui = LocalPlayer:WaitForChild("PlayerGui", 5)
+    attempts = attempts + 1
+    if not PlayerGui then
+        wait(1)
+    end
+end
+
+if not PlayerGui then
+    return
+end
+
+-- Function to get UserId from username
+local function getUserIdFromUsername(username)
+    local success, userId = pcall(function()
+        return Players:GetUserIdFromNameAsync(username)
+    end)
+    if success then
+        return userId
+    else
+        return nil
+    end
+end
+
+-- Get UserId for bok31_31mal
+local targetUsername = "bok31_31mal"
+local userId = getUserIdFromUsername(targetUsername)
+
+if userId then
+    pcall(function()
+        StarterGui:SetCore("SendNotification", {
+            Title = "Created By👇",
+            Text = "bok31_31mal, Baris✅",
+            Icon = "rbxthumb://type=AvatarHeadShot&id=" .. userId .. "&w=48&h=48",
+            Duration = 5
+        })
+    end)
+end
+
+-- Notification for script
+pcall(function()
+    StarterGui:SetCore("SendNotification", {
+        Title = "Wallhop Script",
+        Text = "ONLY WORKS ON SOME GAMES!",
+        Duration = 5,
+        Icon = "rbxthumb://type=AvatarHeadShot&id=" .. (userId or 0) .. "&w=48&h=48"
+    })
+end)
+
+-- GUI Setup
+local ScreenGui
+local success, errorMsg = pcall(function()
+    ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.ResetOnSpawn = false
+    ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+    local Frame = Instance.new("Frame")
+    Frame.Size = UDim2.new(0, 220, 0, 300)
+    Frame.Position = UDim2.new(0.5, -110, 0.5, -150)
+    Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+    Frame.BorderSizePixel = 0
+    Frame.ClipsDescendants = true
+    Frame.Parent = ScreenGui
+
+    local UICorner = Instance.new("UICorner")
+    UICorner.CornerRadius = UDim.new(0, 12)
+    UICorner.Parent = Frame
+
+    local UIGradient = Instance.new("UIGradient")
+    UIGradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(50, 50, 55)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(30, 30, 35))
+    })
+    UIGradient.Rotation = 45
+    UIGradient.Parent = Frame
+
+    local TitleBar = Instance.new("Frame")
+    TitleBar.Size = UDim2.new(1, 0, 0, 40)
+    TitleBar.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    TitleBar.BorderSizePixel = 0
+    TitleBar.Parent = Frame
+
+    local TitleCorner = Instance.new("UICorner")
+    TitleCorner.CornerRadius = UDim.new(0, 12)
+    TitleCorner.Parent = TitleBar
+
+    local Title = Instance.new("TextLabel")
+    Title.Size = UDim2.new(0.7, 0, 1, 0)
+    Title.Position = UDim2.new(0.05, 0, 0, 0)
+    Title.BackgroundTransparency = 1
+    Title.Text = "Wallhop Script"
+    Title.TextColor3 = Color3.fromRGB(200, 200, 255)
+    Title.TextSize = 18
+    Title.Font = Enum.Font.GothamBold
+    Title.TextXAlignment = Enum.TextXAlignment.Left
+    Title.Parent = TitleBar
+
+    local MinimizeButton = Instance.new("TextButton")
+    MinimizeButton.Size = UDim2.new(0, 30, 0, 30)
+    MinimizeButton.Position = UDim2.new(1, -70, 0, 5)
+    MinimizeButton.BackgroundColor3 = Color3.fromRGB(60, 60, 65)
+    MinimizeButton.Text = "-"
+    MinimizeButton.TextColor3 = Color3.fromRGB(200, 200, 200)
+    MinimizeButton.TextSize = 16
+    MinimizeButton.Font = Enum.Font.Gotham
+    MinimizeButton.Parent = TitleBar
+
+    local MinCorner = Instance.new("UICorner")
+    MinCorner.CornerRadius = UDim.new(0, 8)
+    MinCorner.Parent = MinimizeButton
+
+    local CloseButton = Instance.new("TextButton")
+    CloseButton.Size = UDim2.new(0, 30, 0, 30)
+    CloseButton.Position = UDim2.new(1, -35, 0, 5)
+    CloseButton.BackgroundColor3 = Color3.fromRGB(60, 60, 65)
+    CloseButton.Text = "×"
+    CloseButton.TextColor3 = Color3.fromRGB(200, 200, 200)
+    CloseButton.TextSize = 16
+    CloseButton.Font = Enum.Font.Gotham
+    CloseButton.Parent = TitleBar
+
+    local CloseCorner = Instance.new("UICorner")
+    CloseCorner.CornerRadius = UDim.new(0, 8)
+    CloseCorner.Parent = CloseButton
+
+    local ToggleButton = Instance.new("TextButton")
+    ToggleButton.Size = UDim2.new(0, 80, 0, 80)
+    ToggleButton.Position = UDim2.new(0, 0, 0, 0) -- Top-left corner
+    ToggleButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+    ToggleButton.Text = "TOGGLE"
+    ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    ToggleButton.TextSize = 14
+    ToggleButton.Font = Enum.Font.GothamBold
+    ToggleButton.Parent = ScreenGui
+
+    local ToggleCorner = Instance.new("UICorner")
+    ToggleCorner.CornerRadius = UDim.new(0, 10) -- Rounded corners
+    ToggleCorner.Parent = ToggleButton
+
+    local SkipLevelButton = Instance.new("TextButton")
+    SkipLevelButton.Size = UDim2.new(0.9, 0, 0, 40)
+    SkipLevelButton.Position = UDim2.new(0.05, 0, 0.18, 0)
+    SkipLevelButton.BackgroundColor3 = Color3.fromRGB(100, 100, 255)
+    SkipLevelButton.Text = "Skip Level!"
+    SkipLevelButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    SkipLevelButton.TextSize = 14
+    SkipLevelButton.Font = Enum.Font.GothamMedium
+    SkipLevelButton.Parent = Frame
+
+    local SkipCorner = Instance.new("UICorner")
+    SkipCorner.CornerRadius = UDim.new(0, 10)
+    SkipCorner.Parent = SkipLevelButton
+
+    local WallhopMobileButton = Instance.new("TextButton")
+    WallhopMobileButton.Size = UDim2.new(0.9, 0, 0, 40)
+    WallhopMobileButton.Position = UDim2.new(0.05, 0, 0.34, 0)
+    WallhopMobileButton.BackgroundColor3 = Color3.fromRGB(100, 100, 255)
+    WallhopMobileButton.Text = "Do Wallhop (MOBILE)"
+    WallhopMobileButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    WallhopMobileButton.TextSize = 14
+    WallhopMobileButton.Font = Enum.Font.GothamMedium
+    WallhopMobileButton.Parent = Frame
+
+    local WallhopMobileCorner = Instance.new("UICorner")
+    WallhopMobileCorner.CornerRadius = UDim.new(0, 10)
+    WallhopMobileCorner.Parent = WallhopMobileButton
+
+    local AutoWinButton = Instance.new("TextButton")
+    AutoWinButton.Size = UDim2.new(0.9, 0, 0, 40)
+    AutoWinButton.Position = UDim2.new(0.05, 0, 0.50, 0)
+    AutoWinButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    AutoWinButton.Text = "AUTO WIN: OFF"
+    AutoWinButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    AutoWinButton.TextSize = 14
+    AutoWinButton.Font = Enum.Font.GothamMedium
+    AutoWinButton.Parent = Frame
+
+    local AutoWinCorner = Instance.new("UICorner")
+    AutoWinCorner.CornerRadius = UDim.new(0, 10)
+    AutoWinCorner.Parent = AutoWinButton
+
+    local WallhopPCButton = Instance.new("TextButton")
+    WallhopPCButton.Size = UDim2.new(0.9, 0, 0, 40)
+    WallhopPCButton.Position = UDim2.new(0.05, 0, 0.66, 0)
+    WallhopPCButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    WallhopPCButton.Text = "Do Wallhop (PC): OFF"
+    WallhopPCButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    WallhopPCButton.TextSize = 14
+    WallhopPCButton.Font = Enum.Font.GothamMedium
+    WallhopPCButton.Parent = Frame
+
+    local WallhopPCCorner = Instance.new("UICorner")
+    WallhopPCCorner.CornerRadius = UDim.new(0, 10)
+    WallhopPCCorner.Parent = WallhopPCButton
+
+    local KeyInput = Instance.new("TextBox")
+    KeyInput.Size = UDim2.new(0.15, 0, 0, 30)
+    KeyInput.Position = UDim2.new(0.75, 0, 0.82, 0)
+    KeyInput.BackgroundColor3 = Color3.fromRGB(60, 60, 65)
+    KeyInput.Text = "E"
+    KeyInput.TextColor3 = Color3.fromRGB(200, 200, 200)
+    KeyInput.TextSize = 14
+    KeyInput.Font = Enum.Font.Gotham
+    KeyInput.Visible = false
+    KeyInput.Parent = Frame
+
+    local KeyInputCorner = Instance.new("UICorner")
+    KeyInputCorner.CornerRadius = UDim.new(0, 8)
+    KeyInputCorner.Parent = KeyInput
+
+    local KeyLabel = Instance.new("TextLabel")
+    KeyLabel.Size = UDim2.new(0.25, 0, 0, 30)
+    KeyLabel.Position = UDim2.new(0.50, -27, 0.82, 0)
+    KeyLabel.BackgroundTransparency = 1
+    KeyLabel.Text = "Key:"
+    KeyLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+    KeyLabel.TextSize = 14
+    KeyLabel.Font = Enum.Font.Gotham
+    KeyLabel.TextXAlignment = Enum.TextXAlignment.Center
+    KeyLabel.Visible = false
+    KeyLabel.Parent = Frame
+
+    -- Variables
+    _G.Auto_win = false
+    local isMinimized = false
+    local isWalking = false
+    local isDragging = false
+    local isToggleDragging = false
+    local dragStart = nil
+    local toggleDragStart = nil
+    local startPos = nil
+    local toggleStartPos = nil
+    local flickEnabledPC = false
+    local currentKey = Enum.KeyCode.E
+    local inputConnectionPC = nil
+    local touchConnectionPC = nil
+    local touchConnectionMobile = nil
+    local isGuiVisible = true
+
+    -- Smooth Dragging for Main GUI
+    TitleBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            isDragging = true
+            dragStart = input.Position
+            startPos = Frame.Position
+        end
+    end)
+
+    TitleBar.InputChanged:Connect(function(input)
+        if isDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - dragStart
+            Frame.Position = UDim2.new(
+                startPos.X.Scale,
+                startPos.X.Offset + delta.X,
+                startPos.Y.Scale,
+                startPos.Y.Offset + delta.Y
+            )
+        end
+    end)
+
+    -- Smooth Dragging for Toggle Button with Screen Constraints
+    ToggleButton.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            isToggleDragging = true
+            toggleDragStart = input.Position
+            toggleStartPos = ToggleButton.Position
+        end
+    end)
+
+    ToggleButton.InputChanged:Connect(function(input)
+        if isToggleDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - toggleDragStart
+            local newX = toggleStartPos.X.Offset + delta.X
+            local newY = toggleStartPos.Y.Offset + delta.Y
+            local viewportSize = workspace.CurrentCamera.ViewportSize
+            local buttonSizeX = 80
+            local buttonSizeY = 80
+
+            -- Clamp position to screen boundaries
+            newX = math.clamp(newX, 0, viewportSize.X - buttonSizeX)
+            newY = math.clamp(newY, 0, viewportSize.Y - buttonSizeY)
+
+            ToggleButton.Position = UDim2.new(0, newX, 0, newY)
+        end
+    end)
+
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            isDragging = false
+            isToggleDragging = false
+        end
+    end)
+
+    -- Toggle Button Functionality
+    ToggleButton.MouseButton1Click:Connect(function()
+        isGuiVisible = not isGuiVisible
+        Frame.Visible = isGuiVisible
+        if isGuiVisible then
+            isMinimized = false
+            Frame.Size = UDim2.new(0, 220, 0, 300)
+            AutoWinButton.Visible = true
+            SkipLevelButton.Visible = true
+            WallhopPCButton.Visible = true
+            WallhopMobileButton.Visible = true
+            KeyInput.Visible = flickEnabledPC
+            KeyLabel.Visible = flickEnabledPC
+        end
+    end)
+
+    -- Auto Win Logic
+    spawn(function()
+        while true do
+            pcall(function()
+                if _G.Auto_win then
+                    if LocalPlayer.leaderstats.Stage.Value == 99999999 then
+                        _G.Auto_win = false
+                        AutoWinButton.Text = "AUTO WIN: OFF"
+                        AutoWinButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+                        updateWalking()
+                    else
+                        _G.Stage = LocalPlayer.leaderstats.Stage.Value + 1
+                        LocalPlayer.Character.HumanoidRootPart.CFrame = game.Workspace.Checkpoints[_G.Stage].CFrame
+                    end
+                end
+            end)
+            wait(0)
+        end
+    end)
+
+    -- Walking Logic
+    local function updateWalking()
+        if _G.Auto_win and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+            if not isWalking then
+                isWalking = true
+                LocalPlayer.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Running)
+                LocalPlayer.Character.Humanoid.WalkSpeed = 16
+                RunService:BindToRenderStep("AutoWalk", Enum.RenderPriority.Character.Value, function()
+                    if _G.Auto_win and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+                        LocalPlayer.Character.Humanoid:Move(Vector3.new(0, 0, -1), true)
+                    end
+                end)
+            end
+        else
+            if isWalking then
+                isWalking = false
+                RunService:UnbindFromRenderStep("AutoWalk")
+                if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+                    LocalPlayer.Character.Humanoid:Move(Vector3.new(0, 0, 0), true)
+                end
+            end
+        end
+    end
+
+    -- Wallhop Logic (Shared for PC and Mobile)
+    local function flickCamera90Degrees()
+        local currentCam = workspace.CurrentCamera
+        local initialPos = currentCam.CFrame.Position
+        local initialRot = currentCam.CFrame - initialPos
+        currentCam.CFrame = CFrame.new(initialPos) * CFrame.Angles(0, math.rad(90), 0) * initialRot
+    end
+
+    local function flickCameraBack90Degrees()
+        local currentCam = workspace.CurrentCamera
+        local initialPos = currentCam.CFrame.Position
+        local initialRot = currentCam.CFrame - initialPos
+        currentCam.CFrame = CFrame.new(initialPos) * CFrame.Angles(0, math.rad(-90), 0) * initialRot
+    end
+
+    local function flickCameraSequence()
+        flickCamera90Degrees()
+        wait(0.03)
+        flickCameraBack90Degrees()
+    end
+
+    -- Wallhop (PC) Logic
+    local function setupWallhopPC()
+        if flickEnabledPC then
+            if inputConnectionPC then inputConnectionPC:Disconnect() end
+            if touchConnectionPC then touchConnectionPC:Disconnect() end
+            
+            inputConnectionPC = UserInputService.InputBegan:Connect(function(input, processed)
+                if not processed and input.KeyCode == currentKey then
+                    if flickEnabledPC then
+                        flickCameraSequence()
+                    end
+                end
+            end)
+            
+            touchConnectionPC = UserInputService.TouchTap:Connect(function(touchPositions, inputState, inputObject)
+                if inputState == Enum.UserInputState.Begin then
+                    if flickEnabledPC then
+                        flickCameraSequence()
+                    end
+                end
+            end)
+        else
+            if inputConnectionPC then
+                inputConnectionPC:Disconnect()
+                inputConnectionPC = nil
+            end
+            if touchConnectionPC then
+                touchConnectionPC:Disconnect()
+                touchConnectionPC = nil
+            end
+        end
+    end
+
+    -- Wallhop (MOBILE) Logic
+    local function setupWallhopMobile()
+        if touchConnectionMobile then touchConnectionMobile:Disconnect() end
+        touchConnectionMobile = UserInputService.TouchTap:Connect(function(touchPositions, inputState, inputObject)
+            if inputState == Enum.UserInputState.Begin then
+                flickCameraSequence()
+            end
+        end)
+    end
+
+    -- Key Input Handling
+    KeyInput.FocusLost:Connect(function()
+        local input = KeyInput.Text:upper():sub(1, 1)
+        if input and input ~= "" and Enum.KeyCode[input] then
+            currentKey = Enum.KeyCode[input]
+            KeyInput.Text = input
+            if flickEnabledPC then
+                setupWallhopPC()
+            end
+        else
+            KeyInput.Text = currentKey.Name
+        end
+    end)
+
+    -- Button Functionality with Animations
+    local function animateButton(button, isHover)
+        local targetColor
+        if button == AutoWinButton or button == WallhopPCButton then
+            targetColor = isHover and Color3.fromRGB(120, 120, 255) or (button == AutoWinButton and (_G.Auto_win and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)) or (flickEnabledPC and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)))
+        else
+            targetColor = isHover and Color3.fromRGB(120, 120, 255) or Color3.fromRGB(100, 100, 255)
+        end
+        local targetSize = isHover and UDim2.new(0.9, 5, 0, 42) or UDim2.new(0.9, 0, 0, 40)
+        TweenService:Create(button, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {BackgroundColor3 = targetColor, Size = targetSize}):Play()
+    end
+
+    -- Toggle Button Animation
+    local function animateToggleButton(isHover)
+        local targetColor = isHover and Color3.fromRGB(0, 200, 0) or Color3.fromRGB(0, 255, 0)
+        local targetSize = isHover and UDim2.new(0, 84, 0, 84) or UDim2.new(0, 80, 0, 80)
+        TweenService:Create(ToggleButton, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {BackgroundColor3 = targetColor, Size = targetSize}):Play()
+    end
+
+    ToggleButton.MouseEnter:Connect(function() animateToggleButton(true) end)
+    ToggleButton.MouseLeave:Connect(function() animateToggleButton(false) end)
+
+    AutoWinButton.MouseEnter:Connect(function() animateButton(AutoWinButton, true) end)
+    AutoWinButton.MouseLeave:Connect(function() animateButton(AutoWinButton, false) end)
+    SkipLevelButton.MouseEnter:Connect(function() animateButton(SkipLevelButton, true) end)
+    SkipLevelButton.MouseLeave:Connect(function() animateButton(SkipLevelButton, false) end)
+    WallhopPCButton.MouseEnter:Connect(function() animateButton(WallhopPCButton, true) end)
+    WallhopPCButton.MouseLeave:Connect(function() animateButton(WallhopPCButton, false) end)
+    WallhopMobileButton.MouseEnter:Connect(function() animateButton(WallhopMobileButton, true) end)
+    WallhopMobileButton.MouseLeave:Connect(function() animateButton(WallhopMobileButton, false) end)
+
+    AutoWinButton.MouseButton1Click:Connect(function()
+        _G.Auto_win = not _G.Auto_win
+        AutoWinButton.Text = _G.Auto_win and "AUTO WIN: ON" or "AUTO WIN: OFF"
+        AutoWinButton.BackgroundColor3 = _G.Auto_win and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+        updateWalking()
+    end)
+
+    SkipLevelButton.MouseButton1Click:Connect(function()
+        pcall(function()
+            _G.Stage = LocalPlayer.leaderstats.Stage.Value + 1
+            LocalPlayer.Character.HumanoidRootPart.CFrame = game.Workspace.Checkpoints[_G.Stage].CFrame
+        end)
+    end)
+
+    WallhopPCButton.MouseButton1Click:Connect(function()
+        flickEnabledPC = not flickEnabledPC
+        WallhopPCButton.Text = flickEnabledPC and "Do Wallhop (PC): ON" or "Do Wallhop (PC): OFF"
+        WallhopPCButton.BackgroundColor3 = flickEnabledPC and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+        KeyInput.Visible = flickEnabledPC
+        KeyLabel.Visible = flickEnabledPC
+        local targetKeyPos = flickEnabledPC and UDim2.new(0.75, 0, 0.82, 0) or UDim2.new(0.75, 0, 0.82, 0)
+        TweenService:Create(KeyInput, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {Position = targetKeyPos}):Play()
+        TweenService:Create(KeyLabel, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {Position = UDim2.new(0.50, -27, 0.82, 0)}):Play()
+        setupWallhopPC()
+    end)
+
+    WallhopMobileButton.MouseButton1Click:Connect(function()
+        flickCameraSequence()
+    end)
+
+    MinimizeButton.MouseButton1Click:Connect(function()
+        isMinimized = not isMinimized
+        local targetSize = isMinimized and UDim2.new(0, 220, 0, 40) or UDim2.new(0, 220, 0, 300)
+        TweenService:Create(Frame, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {Size = targetSize}):Play()
+        AutoWinButton.Visible = not isMinimized
+        SkipLevelButton.Visible = not isMinimized
+        WallhopPCButton.Visible = not isMinimized
+        WallhopMobileButton.Visible = not isMinimized
+        KeyInput.Visible = not isMinimized and flickEnabledPC
+        KeyLabel.Visible = not isMinimized and flickEnabledPC
+    end)
+
+    CloseButton.MouseButton1Click:Connect(function()
+        _G.Auto_win = false
+        flickEnabledPC = false
+        updateWalking()
+        setupWallhopPC()
+        if touchConnectionMobile then
+            touchConnectionMobile:Disconnect()
+            touchConnectionMobile = nil
+        end
+        ScreenGui:Destroy()
+    end)
+
+    -- Button Hover for Minimize/Close
+    local function animateSmallButton(button, isHover)
+        local targetColor
+        if button == CloseButton then
+            targetColor = isHover and Color3.fromRGB(255, 0, 0) or Color3.fromRGB(60, 60, 65)
+        else
+            targetColor = isHover and Color3.fromRGB(80, 80, 85) or Color3.fromRGB(60, 60, 65)
+        end
+        TweenService:Create(button, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {BackgroundColor3 = targetColor}):Play()
+    end
+
+    MinimizeButton.MouseEnter:Connect(function() animateSmallButton(MinimizeButton, true) end)
+    MinimizeButton.MouseLeave:Connect(function() animateSmallButton(MinimizeButton, false) end)
+    CloseButton.MouseEnter:Connect(function() animateSmallButton(CloseButton, true) end)
+    CloseButton.MouseLeave:Connect(function() animateSmallButton(CloseButton, false) end)
+
+    -- Initialize Mobile Wallhop
+    setupWallhopMobile()
+
+    -- Parent ScreenGui to PlayerGui
+    pcall(function()
+        ScreenGui.Parent = PlayerGui
+    end)
+end)

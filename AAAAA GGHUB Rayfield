@@ -1,0 +1,8 @@
+local button = library:CreateButton("Join Discord", function()
+    setclipboard("https://discord.gg/YOUR_INVITE")
+    game.StarterGui:SetCore("SendNotification", {
+        Title = "Discord",
+        Text = "Invite link copied to clipboard!",
+        Duration = 5
+    })
+end)
